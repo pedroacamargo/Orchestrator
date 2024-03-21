@@ -7,7 +7,7 @@
 // arg 1 - path to the output file
 // arg 2 - parallel tasks
 // arg 3 - sched-policy
-#define CLIENT "data/your_file.txt"
+#define CLIENT "../data/your_file.txt"
 struct timeval t1, t2;
 
 int main(int argc, char *argv[]) {
