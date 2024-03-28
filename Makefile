@@ -1,6 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -g -I include/
 LDFLAGS = 
+FILES = obj/exec.o obj/FCFS.o obj/SJF.o obj/handleFiles.o 
 
 all: folders server client
 
@@ -11,7 +12,7 @@ client: client
 folders:
 	@mkdir -p src include obj tmp
 
-orchestrator: obj/orchestrator.o obj/exec.o
+orchestrator: obj/orchestrator.o $(FILES)
 	$(CC) $(LDFLAGS) $^ -o $@
 
 client: obj/client.o
