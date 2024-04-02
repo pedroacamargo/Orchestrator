@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -g -I include/
 LDFLAGS = 
-FILES = obj/exec.o obj/FCFS.o obj/SJF.o obj/handleFiles.o 
+FILES = obj/exec.o obj/FCFS.o obj/SJF.o obj/handleFiles.o  
 
 all: folders server client
 
@@ -10,19 +10,31 @@ server: orchestrator
 client: client
 
 folders:
-	@mkdir -p src include obj tmp
+	@mkdir -p src include obj tmp obj/Orchestrator obj/Client
 
-orchestrator: obj/orchestrator.o $(FILES)
+orchestrator: obj/Orchestrator/orchestrator.o $(FILES)
 	$(CC) $(LDFLAGS) $^ -o $@
 
-client: obj/client.o
+client: obj/Client/client.o $(FILES)
 	$(CC) $(LDFLAGS) $^ -o $@
 
+# Regra para arquivos .c no diretório src
 obj/%.o: src/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-clean:
-	rm -f obj/* tmp/* client orchestrator
+# Regra para arquivos .c em diretórios de segundo nível de src
+obj/Orchestrator/%.o: src/Orchestrator/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+obj/Client/%.o: src/Client/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+clean: 
+	find obj/ -type f -delete
+	find obj/ -type d -empty -delete
+	rm -f tmp/* client orchestrator
+
+
 
 # 	#================================================
 # CFLAGS = -Wall -Wextra -pedantic -O2
