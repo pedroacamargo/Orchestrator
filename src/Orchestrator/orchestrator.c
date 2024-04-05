@@ -6,12 +6,13 @@
 #define CLIENT "../data/your_file.txt"
 struct timeval t1, t2;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 
-	char comando1[] = "ls -l -a -h";
-	char comando2[] = "sleeep 30";
-	char comando3[] = "sleep 10";
-	char comando4[] = "ps";
+    /* char comando1[] = "ls -l -a -h";
+    char comando2[] = "sleeep 30";
+    char comando3[] = "sleep 10";
+    char comando4[] = "ps"; */
 
     double elapsedTime;
     gettimeofday(&t1, NULL);
@@ -21,16 +22,21 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    pid_t pid = fork();
+    char *politica = argv[3];
+    checkpolicy(politica);
+  
+
+    // EM breve isto vai sair daqui
+    /* pid_t pid = fork();
 
     if (pid == 0) {
         printf("Child process\n");
 
         int res = exec(comando1);
-		if (res == -1) {
-			perror("Error on exec\n");
-			return -1;
-		}
+        if (res == -1) {
+            perror("Error on exec\n");
+            return -1;
+        }
     } else {
         int status;
         int terminated_pid = wait(&status);
@@ -39,16 +45,15 @@ int main(int argc, char *argv[]) {
         gettimeofday(&t2, NULL);
     }
 
-    
+
     elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;      // sec to ms
     elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;   // us to ms
     printf("Time: %.3f ms\n", elapsedTime);
-
+ */
     return 0;
 }
 
-
-// tv_sec 
+// tv_sec
 // 0 1 2 3 4 5 6 7 ...
 // tc_usec
 // 0 - 999999

@@ -11,3 +11,4 @@
 #include "SJF.h"
 #include "FCFS.h"
 #include "handleFiles.h"
+#include "checkpolicy.h"

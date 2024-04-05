@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -g -I include/
 LDFLAGS = 
-FILES = obj/exec.o obj/FCFS.o obj/SJF.o obj/handleFiles.o  
+FILES = obj/Orchestrator/exec.o obj/FCFS.o obj/SJF.o obj/handleFiles.o obj/checkpolicy.o 
 
 all: folders server client
 
