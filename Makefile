@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -g -I include/
 LDFLAGS = 
-FILES = obj/Orchestrator/exec.o obj/FCFS.o obj/SJF.o obj/handleFiles.o obj/checkpolicy.o 
+FILES = obj/Orchestrator/lib.o obj/Orchestrator/FCFS.o obj/Orchestrator/SJF.o obj/Orchestrator/handleFiles.o
 
 all: folders server client
 
@@ -15,7 +15,7 @@ folders:
 orchestrator: obj/Orchestrator/orchestrator.o $(FILES)
 	$(CC) $(LDFLAGS) $^ -o $@
 
-client: obj/Client/client.o $(FILES)
+client: obj/Client/client.o
 	$(CC) $(LDFLAGS) $^ -o $@
 
 # Regra para arquivos .c no diretório src
