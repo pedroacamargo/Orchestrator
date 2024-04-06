@@ -1,7 +1,6 @@
 #include "global.h"
 
-int escalonamentoSJF() {
-    printf("Escalonamento SJF\n");
-    printf("O pai é quente\n");
+int escalonamentoSJF(int parallelTasks) {
+    printf("Threads: %d\n", parallelTasks);
     return 0;
 }

@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include "global.h"
 
 int main() {
     printf("Hello, World!\n");

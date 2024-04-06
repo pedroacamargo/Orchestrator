@@ -1,10 +1,12 @@
-#include "exec.h"
 #include "global.h"
 
+int checkpolicy(char* policy){
+    if (strcmp(policy, "SJF") == 0) return SJF;
+    else if (strcmp(policy, "FCFS") == 0) return FCFS;
 
-// recebe um comando por argumento
-// returna -1 se o fork falhar
-// caso contrario retorna o valor do comando executado
+    return INVALID_POLICY;
+}
+
 int exec(const char* command) {
 
 	int res = -1, i = 0;
