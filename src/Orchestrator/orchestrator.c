@@ -8,11 +8,9 @@ struct timeval t1, t2;
 
 int main(int argc, char *argv[])
 {
-
-    /* char comando1[] = "ls -l -a -h";
-    char comando2[] = "sleeep 30";
-    char comando3[] = "sleep 10";
-    char comando4[] = "ps"; */
+    
+    // esses comandos sao so para testar
+    char *comandos[] = {"ls -l -a -h", "sleep 30", "sleep 10", "ps"};
 
     double elapsedTime;
     gettimeofday(&t1, NULL);
@@ -23,8 +21,17 @@ int main(int argc, char *argv[])
     }
 
     char *politica = argv[3];
-    checkpolicy(politica);
-  
+
+    int policy = checkpolicy(politica);
+    if (policy == INVALID_POLICY) {
+        printf("Invalid policy, server suspended!\n");
+        return 1;
+    }
+
+    // 1 - SJF (Shortest Job First)
+    if (policy == SJF) escalonamentoSJF();
+    else if (policy == FCFS) escalonamentoFCFS();
+    
 
     // EM breve isto vai sair daqui
     /* pid_t pid = fork();

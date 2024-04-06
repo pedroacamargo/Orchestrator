@@ -12,3 +12,7 @@
 #include "FCFS.h"
 #include "handleFiles.h"
 #include "checkpolicy.h"
+
+#define INVALID_POLICY -1
+#define SJF 1
+#define FCFS 2
