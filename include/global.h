@@ -18,3 +18,31 @@
 #define INVALID_POLICY -1 // Invalid policy alias
 #define SJF 1 // Shortest Job First alias
 #define FCFS 2 // First Come First Served alias
+#define MAX_COMMAND_SIZE 300 // Maximum command size 300 bytes
+
+
+typedef enum ProcessStatus {
+    PROCESS_STATUS_ERROR = -1,
+    PROCESS_STATUS_RUNNING = 0,
+    PROCESS_STATUS_FINISHED = 1,
+    PROCESS_STATUS_WAITING = 2,
+    PROCESS_STATUS_IDLE = 3
+} ProcessStatus;
+
+/**
+ * @brief Estrutura de um processo
+ * @param pid Process ID
+ * @param command Command to be executed
+ * @param status Process status (0 - Running, 1 - Finished, 2 - Idle)
+ * @param t1 Time 1
+ * @param t2 Time 2
+ * @param elapsedTime Elapsed time
+*/
+typedef struct process {
+    int pid;
+    int parentPid;
+    char command[MAX_COMMAND_SIZE];
+    ProcessStatus status;
+    struct timeval t1, t2;
+    double elapsedTime;
+} Process;

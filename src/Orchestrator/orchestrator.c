@@ -1,7 +1,7 @@
 #include "global.h"
 
 // esses comandos sao so para testar, dps o client vai dar os comandos
-char *comandos[] = {"ls -l -a -h", "sleep 3", "sleep 10", "ps", "ls -l", "sleep 5", "ls -l -a", "sleep 2", "ls -l -a -h", "sleep 1"};
+char *comandos[] = {"sleep 4", "sleep 3", "sleep 5", "sleep 2", "sleep 3", "sleep 5", "ls -l -a", "sleep 2", "ls -l -a -h", "sleep 1"};
 
 // arg 1 - path to the output file
 int main(int argc, char *argv[])
