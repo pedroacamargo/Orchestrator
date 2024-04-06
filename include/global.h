@@ -10,7 +10,6 @@
 #include "SJF.h"
 #include "FCFS.h"
 #include "handleFiles.h"
-#include "checkpolicy.h"
 
 /**
  * @brief Constantes para as politicas de escalonamento
