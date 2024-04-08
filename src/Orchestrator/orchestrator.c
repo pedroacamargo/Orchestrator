@@ -2,6 +2,8 @@
 
 // esses comandos sao so para testar, dps o client vai dar os comandos
 char *comandos[] = {"sleep 4", "sleep 3", "sleep 4", "sleep 2", "sleep 3", "sleep 5", "sleep 1", "sleep 2", "ls -l -a -h", "sleep 1"};
+ char *comandos_for_sjf[] = {"10 sleep 4", "10 sleep 3", "15 sleep 5", "15 sleep 5", "15 sleep 10", "15 sleep 10"};
+ // ./client execute 100 -u "prog-a arg-1 (...) arg-n" */
 
 // arg 1 - path to the output file
 int main(int argc, char *argv[])
@@ -19,10 +21,8 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    if (policy == SJF) escalonamentoSJF(atoi(argv[2]));
+    if (policy == SJF) escalonamentoSJF(atoi(argv[2]), comandos_for_sjf);
     else if (policy == FCFS) escalonamentoFCFS(atoi(argv[2]), comandos);
-    
-
     return 0;
 }
 
