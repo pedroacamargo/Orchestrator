@@ -51,3 +51,87 @@ int exec(const char* command) {
 
 	return res;
 }
+
+void execPipe(const char *command, int number_processes){
+
+    char** processArray = malloc((number_processes) * sizeof(char*));
+    
+    extractProcessPipe(command, number_processes, processArray);
+
+    for(int i = 0; i < number_processes; i++){
+        printf("Process %d: %s\n", i, processArray[i]); // so para debug 
+    }
+
+    int fd[2];
+    pipe(fd);
+    if (fork() == 0) {
+        close(fd[0]);
+        dup2(fd[1], STDOUT_FILENO);
+        close(fd[1]);
+
+        exec(processArray[0]);                 //implementado como esta no necc e como voces fizeram nas aulas 
+        _exit(-1);                             //pode ser melhorado, quem quiser esta a vontade
+    }	                   					   // deve retornar o res mas ns como se faz, uma vez
+    close(fd[1]);                              //que no exec isso vem do wait e aqui nao temos wait "normal"
+    wait(NULL);
+
+    if (fork() == 0) {
+        dup2(fd[0], STDIN_FILENO);
+        close(fd[0]);
+
+        exec(processArray[1]);
+        _exit(-1);
+    }
+    close(fd[0]);
+    wait(NULL);
+
+    // Free the allocated memory
+    for (int i = 0; i < number_processes + 1; i++) {
+        free(processArray[i]);
+    free(processArray);
+    }
+
+}
+
+int checkPipe(const char *command){
+    int count = 0;
+    for (int i = 0; i < strlen(command); i++){
+        if (command[i] == '|')
+            count++;
+    }
+    return count + 1;
+}
+
+
+char *space(char *str) {
+    while (*str == ' ') {
+        str++;
+    }
+    char *end = str + strlen(str) - 1;
+    while (*end == ' ') {
+        end--;
+    }
+    *(end + 1) = '\0';
+
+    return str;
+}
+
+void extractProcessPipe(const char *command, int number_processes, char **processArray) {
+
+    char *command_copy = strdup(command); 
+    int index = 0;
+    char *token = strtok(command_copy, "|");
+    while (token != NULL && index < number_processes) {      
+        token = space(token);
+        processArray[index] = strdup(token);
+        index++;
+        token = strtok(NULL, "|");
+    }
+    processArray[index] = NULL;  
+
+}
+
+char* extractTimeProcess(const char* command) {
+    const char* space = strchr(command, ' ');
+    return strdup(space + 1);
+}
