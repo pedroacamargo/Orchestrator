@@ -8,6 +8,7 @@ void childProccessFCFS(int childPid, int index, char queue[][100], int parentPid
     process.parentPid = parentPid;
 
     printf("(%d): Executando comando <%s>\n", process.pid, process.command);
+    handleFiles(queue, index, process.status);
 
     int res = exec(queue[index]);
     if (res == -1) printf("CHILD (%d): Error on exec\n", childPid);
@@ -26,8 +27,13 @@ int escalonamentoFCFS(int parallelTasks, char *comandos[]) {
 
     for (int i = 0; i < queueSize; i++) {
         strcpy(queue[i], comandos[i]);
-        if (i < parallelTasks) statusQueue[i] = PROCESS_STATUS_WAITING;
-        else statusQueue[i] = PROCESS_STATUS_IDLE;
+        if (i < parallelTasks) 
+            statusQueue[i] = PROCESS_STATUS_WAITING;
+            
+        else
+            statusQueue[i] = PROCESS_STATUS_IDLE;
+            
+        handleFiles(queue, i, statusQueue[i]);
     }
 
     while (actualProcessIndex < queueSize) {
@@ -43,6 +49,8 @@ int escalonamentoFCFS(int parallelTasks, char *comandos[]) {
             int terminated_pid = wait(&status);
             printf("Child process %d terminated with status %d\n", terminated_pid, WEXITSTATUS(status));
             statusQueue[finishedProcesses] = PROCESS_STATUS_FINISHED;
+            handleFiles(queue, finishedProcesses, statusQueue[finishedProcesses]);
+            
             if (finishedProcesses + parallelTasks < queueSize) {
                 statusQueue[finishedProcesses + parallelTasks] = PROCESS_STATUS_WAITING;
             }
