@@ -52,4 +52,8 @@ void extractProcessPipe(const char *command, int number_processes, char **proces
 */
 char* extractTimeProcess(const char* command);
 
+int fifo();
+int readFifo();
+int writeFifo();
+
 #endif

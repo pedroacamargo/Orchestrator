@@ -6,12 +6,15 @@ char *comandos[] = {"sleep 4", "sleep 3", "sleep 4", "sleep 2", "sleep 3", "slee
  // ./client execute 100 -u "prog-a arg-1 (...) arg-n" */
 
 // arg 1 - path to the output file
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]){
+
     if (argc < 4) {
         printf("Usage: %s <output-folder> <parallel-tasks> <sched-policy>\n", argv[0]);
         return 1;
     }
+    //fifo(); //cria fifo para comunicacao com o client, se ja existir comentar a funcao para conseguir correr o programa
+    readFifo();
+
 
     char *politica = argv[3];
 

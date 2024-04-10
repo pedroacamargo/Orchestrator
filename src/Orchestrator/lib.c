@@ -135,3 +135,53 @@ char* extractTimeProcess(const char* command) {
     const char* space = strchr(command, ' ');
     return strdup(space + 1);
 }
+
+int fifo(){
+    int res = mkfifo("fifo", 0666);
+        if (res == -1) {
+            perror("mkfifo");
+            exit(1);
+        }
+    return res;
+}
+
+int readFifo(){
+    int fifo_fd = open("fifo", O_RDONLY);
+    printf("FIFO opened to read...\n");
+    char buffer[256];
+    size_t read_bytes;
+
+    while ((read_bytes = read(fifo_fd, buffer, sizeof(buffer))) > 0) {
+        if (write(STDOUT_FILENO, buffer, read_bytes) == -1) {
+            perror("write");
+            exit(1);
+        }
+    }
+
+    return 0;
+} 
+
+
+
+
+int writeFifo(){
+    int fifo_fd = open("fifo", O_WRONLY);
+    printf("FIFO opened to write...\n");
+    if (fifo_fd == -1) {
+        perror("open");
+        exit(1);
+    }
+    char BUFFER[256];
+    size_t read_bytes;
+
+    while ((read_bytes = read(STDIN_FILENO, BUFFER, sizeof(BUFFER))) > 0) {
+        if (write(fifo_fd, BUFFER, read_bytes) == -1) {
+            perror("write");
+            exit(1);
+        }
+    }
+
+    close(fifo_fd);
+
+    return 0;
+} 
