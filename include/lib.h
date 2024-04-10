@@ -50,10 +50,12 @@ void extractProcessPipe(const char *command, int number_processes, char **proces
  * @param command The command to be executed
  * @returns the command without the time to be executed
 */
-char* extractTimeProcess(const char* command);
+char* extractTimeProcess(char* command);
+
+
 
 int fifo();
-int readFifo();
 int writeFifo();
-
+char *retira_new_line(char *str);
+void run(char *output_folder, int parallel_tasks, char *sched_policy, char *command);
 #endif
