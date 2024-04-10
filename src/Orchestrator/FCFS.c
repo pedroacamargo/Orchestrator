@@ -9,14 +9,21 @@ void childProccessFCFS(int childPid, int index, char queue[][100], int parentPid
 
     printf("(%d): Executando comando <%s>\n", process.pid, process.command);
 
+    gettimeofday(&process.t1, 0);
     int res = exec(queue[index]);
     if (res == -1) printf("CHILD (%d): Error on exec\n", childPid);
+    gettimeofday(&process.t2, 0);
+
+    process.elapsedTime = (process.t2.tv_sec - process.t1.tv_sec) * 1000.0;      // sec to ms
+    process.elapsedTime += (process.t2.tv_usec - process.t1.tv_usec) / 1000.0;   // us to ms
+    printf("Time: %.3f ms\n", process.elapsedTime);
+
+
 
     _exit(res);
 }
 
 // TODO: Return the processes to store in the output file
-// TODO: Implement the time measurement
 // TODO: Implement pipes to communicate with the child processes and get the Process struct
 int escalonamentoFCFS(int parallelTasks, char *comandos[]) {
     int queueSize = 8;
