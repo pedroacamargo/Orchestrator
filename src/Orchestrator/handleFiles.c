@@ -26,6 +26,7 @@ int handleFiles(const char* origin_path, const char* destiny_path) {
     }
 
     copyFileContent(fd_origin, fd_destiny);
+    printf("Tijolo\n");
 
     close(fd_origin);
     close(fd_destiny);
