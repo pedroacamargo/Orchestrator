@@ -71,7 +71,6 @@ int main(int argc, char *argv[]){
 
         // TODO: Fazer um loop infinito enquanto o fifo não for fechado
         while(1) {
-            sleep(1);
 
             // Store the command in the idle file if all threads are executing
             if (executing == atoi(argv[2])) {
