@@ -86,9 +86,8 @@ void execPipe(const char *command, int number_processes){
     wait(NULL);
 
     // Free the allocated memory
-    for (int i = 0; i < number_processes + 1; i++) {
+    for (int i = 0; i < number_processes ; i++) {
         free(processArray[i]);
-    free(processArray);
     }
 
 }
@@ -108,12 +107,34 @@ char *space(char *str) {
         str++;
     }
     char *end = str + strlen(str) - 1;
-    while (*end == ' ') {
+    while (*end == ' ' || *end == '\n') {
         end--;
     }
     *(end + 1) = '\0';
-
     return str;
+}
+char *retira_new_line(char *str) {
+    char *new = malloc(strlen(str) + 1); 
+    if (new == NULL) {
+        return NULL;
+    }
+    int i;
+    for(i = 0; str[i] != '\n'; i++) {
+        new[i] = str[i];
+    }
+    new[i] = '\0'; 
+    return new;
+}
+
+char* extractTimeProcess(char* command) {
+    char *space = strchr(command, ' ');
+    if (space == NULL) {
+        return NULL;
+    }
+    while (*space == ' ') {
+        space++;
+    }
+    return strdup(space);
 }
 
 void extractProcessPipe(const char *command, int number_processes, char **processArray) {
@@ -131,10 +152,6 @@ void extractProcessPipe(const char *command, int number_processes, char **proces
 
 }
 
-char* extractTimeProcess(const char* command) {
-    const char* space = strchr(command, ' ');
-    return strdup(space + 1);
-}
 
 int fifo(){
     int res = mkfifo("fifo", 0666);
@@ -144,25 +161,6 @@ int fifo(){
         }
     return res;
 }
-
-int readFifo(){
-    int fifo_fd = open("fifo", O_RDONLY);
-    printf("FIFO opened to read...\n");
-    char buffer[256];
-    size_t read_bytes;
-
-    while ((read_bytes = read(fifo_fd, buffer, sizeof(buffer))) > 0) {
-        if (write(STDOUT_FILENO, buffer, read_bytes) == -1) {
-            perror("write");
-            exit(1);
-        }
-    }
-
-    return 0;
-} 
-
-
-
 
 int writeFifo(){
     int fifo_fd = open("fifo", O_WRONLY);
@@ -185,3 +183,16 @@ int writeFifo(){
 
     return 0;
 } 
+
+void run(char *output_folder, int parallel_tasks, char *sched_policy, char *command) {
+    char *politica = sched_policy;
+    int policy = checkpolicy(politica);
+    if (policy == INVALID_POLICY){
+        printf("Invalid policy, server suspended!\n");
+    }
+    if (policy == SJF)
+        escalonamentoSJF(parallel_tasks, command);
+    
+    /* else if (policy == FCFS)
+    escalonamentoFCFS(parallel_tasks, command); */
+}

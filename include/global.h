@@ -1,3 +1,6 @@
+#ifndef GLOBAL_H
+#define GLOBAL_H
+
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -5,14 +8,12 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/time.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 
 #include "lib.h"
 #include "SJF.h"
 #include "FCFS.h"
-#include "handleFiles.h"
 
 /**
  * @brief Constantes para as politicas de escalonamento
@@ -49,3 +50,7 @@ typedef struct process {
     struct timeval t1, t2;
     double elapsedTime;
 } Process;
+
+#include "handleFiles.h"
+
+#endif
