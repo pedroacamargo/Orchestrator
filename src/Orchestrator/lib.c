@@ -177,8 +177,12 @@ int writeFifo(){
             perror("write");
             exit(1);
         }
+
+        BUFFER[read_bytes] = '\0';
+        printf("Sent: %s", BUFFER);
     }
 
+    
     close(fifo_fd);
 
     return 0;
