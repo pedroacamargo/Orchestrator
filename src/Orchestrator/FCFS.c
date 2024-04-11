@@ -3,7 +3,6 @@
 
 void childProccessFCFS(Process process) {
     printf("(%d): Executando comando <%s>\n", process.pid, process.command);
-
     process.status = PROCESS_STATUS_RUNNING;
     handleProcess(process, process.pid);
 
@@ -27,11 +26,12 @@ void childProccessFCFS(Process process) {
 int escalonamentoFCFS(int parallelTasks, char *comando, int commandsWritten) {
     Process queue[parallelTasks];
     int actualProcessIndex = 0, finishedProcesses = 0;
+    printf("FCFS: %d\n", parallelTasks);
 
     // Seed the queue with the processes to be executed
     for (int i = 0; i < parallelTasks; i++) {
         Process process = {
-            .pid = commandsWritten, // TODO: Implement id
+            .pid = commandsWritten,
             .parentPid = getppid(),
             .status = PROCESS_STATUS_WAITING,
             .elapsedTime = 0.0f,

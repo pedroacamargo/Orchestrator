@@ -198,15 +198,15 @@ int countLines(const char *filename) {
         return -1;
     }
 
-    int lines = 0;
+    int lines = 1;
     char buffer[1];
     while (read(fd, buffer, 1) > 0) {
         if (buffer[0] == '\n') {
-            lines++;
+            lines += 1;
         }
     }
 
     close(fd);
 
-    return lines;
+    return lines - 1;
 }

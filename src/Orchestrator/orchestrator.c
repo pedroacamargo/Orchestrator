@@ -41,7 +41,7 @@ int main(int argc, char *argv[]){
     }
 
 
-    printf("FIFO opened to read...\n");
+    printf("Orchestrator started!\n");
 
     char buffer[256];
     ssize_t bytes_read;
@@ -71,14 +71,13 @@ int main(int argc, char *argv[]){
 
         // TODO: Fazer um loop infinito enquanto o fifo não for fechado
         while(1) {
-            printf("Executing: %d\n", executing);
             sleep(1);
+            printf("BUffer: %s", buffer);
 
             // Store the command in the idle file if all threads are executing
             if (executing == atoi(argv[2])) {
                 bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1);
                 buffer[bytes_read] = '\0';
-
                 Process newProcess = {
                     .pid = commandsWritten,
                     .parentPid = 0,
@@ -92,15 +91,18 @@ int main(int argc, char *argv[]){
 
                 memset(buffer, 0, sizeof(buffer));
                 commandsWritten++;
+                printf("Atoi: %d\n", atoi(argv[2]));
             } else if (executing < atoi(argv[2])) {
                 if (idle > 0) {
                     // read from idle file
                     int bytesRead = read(fdIdle, buffer, sizeof(buffer) - 1);
+                    lseek(fdIdle, 0, SEEK_SET);
                     buffer[bytesRead] = '\0';
                     int processNumber;
                     sscanf(buffer, "%d", &processNumber);
 
                     char *command = strstr(buffer, " ")  + 1;
+                    printf("Command: %s", command);
 
                     Process newProcess = {
                         .pid = processNumber,
@@ -120,7 +122,7 @@ int main(int argc, char *argv[]){
                     }
 
                     if (child_pid == 0) {
-                        escalonamentoFCFS(atoi(argv[2]), newProcess.command, commandsWritten);
+                        escalonamentoFCFS(atoi(argv[2]), newProcess.command, newProcess.pid);
                         _exit(0);
                     }
 
@@ -142,14 +144,21 @@ int main(int argc, char *argv[]){
                     strcpy(fifoProcess.command, retira_new_line(buffer));
                     handleProcess(fifoProcess, fifoProcess.pid);
 
-                    memset(buffer, 0, sizeof(buffer));
                     commandsWritten++;
                 } else {
                     bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1);
-
                     buffer[bytes_read] = '\0';
-                    // char *command = strstr(buffer, " ")  + 1;
-                    // printf("Command: %s", command);
+                    // printf("Received: %s\n", buffer);
+                    Process fifoProcess = {
+                        .pid = commandsWritten,
+                        .parentPid = 0,
+                        .status = PROCESS_STATUS_RUNNING,
+                        .elapsedTime = 0.0f,
+                        .t1 = {0, 0},
+                        .t2 = {0, 0},
+                    };
+                    strcpy(fifoProcess.command, retira_new_line(buffer));
+                    handleProcess(fifoProcess, fifoProcess.pid);
 
                     int child_pid = fork();
                     if (child_pid == -1) {
@@ -158,19 +167,17 @@ int main(int argc, char *argv[]){
                     }
 
                     if (child_pid == 0) {
-                        escalonamentoFCFS(atoi(argv[2]),retira_new_line(buffer), commandsWritten);
+                        escalonamentoFCFS(atoi(argv[2]), fifoProcess.command, fifoProcess.pid);
                         _exit(0);
                     }
 
-
-                    // Limpe o buffer para a próxima leitura
-                    memset(buffer, 0, sizeof(buffer));
                     commandsWritten++;
                 }
             }
-
             executing = countLines("tmp/executing.txt");
             idle = countLines("tmp/idle.txt");
+            printf("Executing: %d\n", executing);
+            memset(buffer, 0, sizeof(buffer));
         }
     }
 
