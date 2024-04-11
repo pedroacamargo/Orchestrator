@@ -122,7 +122,7 @@ int main(int argc, char *argv[]){
                     }
 
                     if (child_pid == 0) {
-                        escalonamentoFCFS(atoi(argv[2]), newProcess.command, newProcess.pid);
+                        escalonamentoFCFS(1, newProcess.command, newProcess.pid);
                         _exit(0);
                     }
 
@@ -167,13 +167,14 @@ int main(int argc, char *argv[]){
                     }
 
                     if (child_pid == 0) {
-                        escalonamentoFCFS(atoi(argv[2]), fifoProcess.command, fifoProcess.pid);
+                        escalonamentoFCFS(1, fifoProcess.command, fifoProcess.pid);
                         _exit(0);
                     }
 
                     commandsWritten++;
                 }
             }
+            
             executing = countLines("tmp/executing.txt");
             idle = countLines("tmp/idle.txt");
             printf("Executing: %d\n", executing);
