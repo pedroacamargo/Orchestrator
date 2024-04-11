@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -g -I include/
 LDFLAGS = 
-FILES = obj/Orchestrator/lib.o obj/Orchestrator/FCFS.o obj/Orchestrator/SJF.o obj/Orchestrator/handleFiles.o
+FILES = obj/Orchestrator/handleFiles.o obj/Orchestrator/lib.o obj/Orchestrator/FCFS.o obj/Orchestrator/SJF.o 
 
 all: folders server client
 
