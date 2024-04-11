@@ -58,7 +58,44 @@ int escalonamentoFCFS(int parallelTasks, char *comando, int commandsWritten) {
         printf("Child process %d terminated with status %d\n", terminated_pid, WEXITSTATUS(status));
         queue[finishedProcesses].status = PROCESS_STATUS_FINISHED;
         
-        // printf("actualProcessIndex: %d, finishedProcesses: %d\n", actualProcessIndex, finishedProcesses);
+        int fdIdle = open("tmp/idle.txt", O_RDONLY, 0644);
+        int idle = countLines("tmp/idle.txt");
+        lseek(fdIdle, 0, SEEK_SET);
+        
+        if (idle > 0) {
+            char buffer[MAX_COMMAND_SIZE];
+            int bytesRead = read(fdIdle, buffer, sizeof(buffer) - 1);
+            buffer[bytesRead] = '\0';
+            int processNumber;
+            sscanf(buffer, "%d", &processNumber);
+
+            char *command = strstr(buffer, " ")  + 1;
+            printf("Command: %s", command);
+
+            Process newProcess = {
+                .pid = processNumber,
+                .parentPid = 0,
+                .status = PROCESS_STATUS_RUNNING,
+                .elapsedTime = 0.0f,
+                .t1 = {0, 0},
+                .t2 = {0, 0},
+            };
+            strcpy(newProcess.command, retira_new_line(command));
+            handleProcess(newProcess, newProcess.pid);
+
+            int child_pid = fork();
+            if (child_pid == -1) {
+                perror("Error on creating FCFS child process\n");
+                return 1;
+            }
+
+            if (child_pid == 0) {
+                escalonamentoFCFS(parallelTasks, newProcess.command, newProcess.pid);
+                _exit(0);
+            }
+        }
+
+        close(fdIdle);
     }
 
     // printf("actualProcessIndex: %d, finishedProcesses: %d\n", actualProcessIndex, finishedProcesses);
