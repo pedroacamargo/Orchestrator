@@ -13,7 +13,6 @@
 
 #include "lib.h"
 #include "SJF.h"
-#include "FCFS.h"
 
 /**
  * @brief Constantes para as politicas de escalonamento
@@ -23,7 +22,6 @@
 #define SJF 1 // Shortest Job First alias
 #define FCFS 2 // First Come First Served alias
 #define MAX_COMMAND_SIZE 300 // Maximum command size 300 bytes
-
 
 typedef enum ProcessStatus {
     PROCESS_STATUS_ERROR = -1,

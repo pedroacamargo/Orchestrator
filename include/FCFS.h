@@ -1,6 +1,8 @@
 #ifndef FCFS_H
 #define FCFS_H
+#include "global.h"
 
-int escalonamentoFCFS(int parallelTasks, char *comando);
+void childProccessFCFS(Process process);
+int escalonamentoFCFS(int parallelTasks, char *comando, int commandsWritten);
 
 #endif

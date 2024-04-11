@@ -5,9 +5,9 @@ void writeProcess(Process p, int fd, int command_id) {
     int size;
 
     if (p.status != PROCESS_STATUS_FINISHED) {
-        size = snprintf(buffer, sizeof(buffer), "(%d): %s\n", command_id, p.command);
+        size = snprintf(buffer, sizeof(buffer), "%d: %s\n", command_id, p.command);
     } else {
-        size = snprintf(buffer, sizeof(buffer), "(%d): %s [%f]\n", command_id, p.command, p.elapsedTime);
+        size = snprintf(buffer, sizeof(buffer), "%d: %s [%f]\n", command_id, p.command, p.elapsedTime);
     }
 
     if (size < 0 || size >= sizeof(buffer)) {
@@ -41,7 +41,7 @@ int removeProcessFromFile(const char *filename, int command_id) {
 
     // Find the command to remove in the memory
     char command_to_remove[MAX_COMMAND_SIZE];
-    sprintf(command_to_remove, "(%d):", command_id);
+    sprintf(command_to_remove, "%d:", command_id);
     char *command_start = strstr(file_content, command_to_remove);
     if (command_start == NULL) {
         // If the command is not found, just ignore and return
@@ -134,4 +134,79 @@ int handleFiles(char queue[][100], int i, ProcessStatus status) {
     close(fd);
 
     return 0;
+}
+
+int handleProcess(Process p, int command_id) {
+    char filename[50];
+
+    switch (p.status) {
+        case PROCESS_STATUS_RUNNING:
+            strcpy(filename, "tmp/executing.txt");
+            break;
+        case PROCESS_STATUS_WAITING:
+            strcpy(filename, "tmp/scheduled.txt");
+            break;
+        case PROCESS_STATUS_IDLE:
+            strcpy(filename, "tmp/idle.txt");
+            break;
+        case PROCESS_STATUS_FINISHED:
+            strcpy(filename, "tmp/completed.txt");
+            break;
+        default:
+            return 0;
+    }
+
+    for (int i = PROCESS_STATUS_RUNNING; i <= PROCESS_STATUS_IDLE; ++i) {
+        char existing_filename[50];
+        switch (i) {
+            case PROCESS_STATUS_RUNNING:
+                strcpy(existing_filename, "tmp/executing.txt");
+                break;
+            case PROCESS_STATUS_WAITING:
+                strcpy(existing_filename, "tmp/scheduled.txt");
+                break;
+            case PROCESS_STATUS_IDLE:
+                strcpy(existing_filename, "tmp/idle.txt");
+                break;
+            case PROCESS_STATUS_FINISHED:
+                strcpy(existing_filename, "tmp/completed.txt");
+                break;
+            default:
+                continue;
+        }
+
+        removeProcessFromFile(existing_filename, command_id);
+    }
+
+    int fd = open(filename, O_RDWR | O_CREAT | O_APPEND, 0644); 
+    if (fd == -1) { 
+        perror("Error opening destination file");
+        return -1;
+    }
+
+    writeProcess(p, fd, command_id);
+
+    close(fd);
+
+    return 0;
+}
+
+int countLines(const char *filename) {
+    int fd = open(filename, O_RDONLY);
+    if (fd == -1) {
+        perror("Error opening file to count lines");
+        return -1;
+    }
+
+    int lines = 0;
+    char buffer[1];
+    while (read(fd, buffer, 1) > 0) {
+        if (buffer[0] == '\n') {
+            lines++;
+        }
+    }
+
+    close(fd);
+
+    return lines;
 }

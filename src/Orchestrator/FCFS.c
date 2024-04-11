@@ -1,80 +1,66 @@
 #include "global.h"
+#include "FCFS.h"
 
-void childProccessFCFS(int childPid, int index, char queue[][100], int parentPid) {
-    Process process;
-    process.pid = childPid;
-    strcpy(process.command, queue[index]);
-    process.status = PROCESS_STATUS_RUNNING;
-    process.parentPid = parentPid;
-
+void childProccessFCFS(Process process) {
     printf("(%d): Executando comando <%s>\n", process.pid, process.command);
-    // handleFiles(queue, index, process.status);
+
+    process.status = PROCESS_STATUS_RUNNING;
+    handleProcess(process, process.pid);
+
 
     gettimeofday(&process.t1, 0);
-    int res = exec(queue[index]);
-    if (res == -1) printf("CHILD (%d): Error on exec\n", childPid);
+    int res = exec(process.command);
+    if (res == -1) printf("CHILD (%d): Error on exec\n", process.pid);
     gettimeofday(&process.t2, 0);
 
     process.elapsedTime = (process.t2.tv_sec - process.t1.tv_sec) * 1000.0;      // sec to ms
     process.elapsedTime += (process.t2.tv_usec - process.t1.tv_usec) / 1000.0;   // us to ms
     printf("Time: %.3f ms\n", process.elapsedTime);
 
-
+    process.status = PROCESS_STATUS_FINISHED;
+    handleProcess(process, process.pid);
 
     _exit(res);
 }
 
 // TODO: Return the processes to store in the output file
-// TODO: Implement pipes to communicate with the child processes and get the Process struct
-int escalonamentoFCFS(int parallelTasks, char *comando) {
-    int queueSize = 1;
-    char queue[queueSize][100];
-    ProcessStatus statusQueue[100];
+int escalonamentoFCFS(int parallelTasks, char *comando, int commandsWritten) {
+    Process queue[parallelTasks];
     int actualProcessIndex = 0, finishedProcesses = 0;
 
-    for (int i = 0; i < queueSize; i++) {
-        strcpy(queue[i], comando);
-        if (i < parallelTasks) 
-            statusQueue[i] = PROCESS_STATUS_WAITING;
-            
-        else
-            statusQueue[i] = PROCESS_STATUS_IDLE;
-            
-        // handleFiles(queue, i, statusQueue[i]);
+    // Seed the queue with the processes to be executed
+    for (int i = 0; i < parallelTasks; i++) {
+        Process process = {
+            .pid = commandsWritten, // TODO: Implement id
+            .parentPid = getppid(),
+            .status = PROCESS_STATUS_WAITING,
+            .elapsedTime = 0.0f,
+            .t1 = {0, 0},
+            .t2 = {0, 0},
+        };
+        strcpy(process.command, comando);
+
+        queue[i] = process;
+        handleProcess(process, process.pid);
     }
 
-    while (actualProcessIndex < queueSize) {
-        while (actualProcessIndex < queueSize && statusQueue[actualProcessIndex] == PROCESS_STATUS_WAITING) {
-            pid_t pid = fork();
-            if (pid == -1) perror("Error on fork\n");
-            if (pid == 0) childProccessFCFS(getpid(), actualProcessIndex, queue, getppid());
-            actualProcessIndex++;
-        }
+    while (actualProcessIndex < parallelTasks) {
+        pid_t pid = fork();
+        if (pid == -1) perror("Error on fork\n");
+        if (pid == 0) childProccessFCFS(queue[actualProcessIndex]);
 
-        for (; finishedProcesses < actualProcessIndex && actualProcessIndex <= queueSize; finishedProcesses++) {
-            int status;
-            int terminated_pid = wait(&status);
-            printf("Child process %d terminated with status %d\n", terminated_pid, WEXITSTATUS(status));
-            statusQueue[finishedProcesses] = PROCESS_STATUS_FINISHED;
-            // handleFiles(queue, finishedProcesses, statusQueue[finishedProcesses]);
-            
-            if (finishedProcesses + parallelTasks < queueSize) {
-                statusQueue[finishedProcesses + parallelTasks] = PROCESS_STATUS_WAITING;
-            }
-
-
-            // Simulate the creation of a new process (Thread) if there are still processes to be executed
-            if (actualProcessIndex < queueSize && statusQueue[actualProcessIndex] == PROCESS_STATUS_WAITING) {
-                pid_t pid = fork();
-                if (pid == -1) perror("Error on fork\n");
-                if (pid == 0) childProccessFCFS(getpid(), actualProcessIndex, queue, getppid());
-                actualProcessIndex++;
-            }
-
-            printf("actualProcessIndex: %d, finishedProcesses: %d\n", actualProcessIndex, finishedProcesses);
-        }
-        printf("actualProcessIndex: %d, finishedProcesses: %d\n", actualProcessIndex, finishedProcesses);
+        actualProcessIndex++;
     }
 
+    for (; finishedProcesses < actualProcessIndex && actualProcessIndex <= parallelTasks; finishedProcesses++) {
+        int status;
+        int terminated_pid = wait(&status);
+        printf("Child process %d terminated with status %d\n", terminated_pid, WEXITSTATUS(status));
+        queue[finishedProcesses].status = PROCESS_STATUS_FINISHED;
+        
+        // printf("actualProcessIndex: %d, finishedProcesses: %d\n", actualProcessIndex, finishedProcesses);
+    }
+
+    // printf("actualProcessIndex: %d, finishedProcesses: %d\n", actualProcessIndex, finishedProcesses);
     return 0;
 }

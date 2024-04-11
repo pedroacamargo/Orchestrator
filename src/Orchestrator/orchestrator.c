@@ -1,4 +1,5 @@
 #include "global.h"
+#include "FCFS.h"
 
 char *comandos[] = {"sleep 4", "sleep 3", "sleep 4", "sleep 2", "sleep 3", "sleep 5", "sleep 1", "sleep 2", "ls -l -a -h", "sleep 1"};
 char *comandos_for_sjf[] = {"10 sleep 4", "11 sleep 4", "12 sleep 5", "13 sleep 2", "14 sleep 5", "10 sleep 5", "1 ls /etc | wc -l"};
@@ -17,6 +18,28 @@ int main(int argc, char *argv[]){
         perror("open");
         return 1;
     }
+
+    int fdIdle = open("tmp/idle.txt", O_CREAT | O_RDONLY, 0666);
+    if (fdIdle == -1){
+        perror("open");
+        return 1;
+    }
+    int fdScheduled = open("tmp/scheduled.txt", O_CREAT | O_RDONLY, 0666);
+    if (fdScheduled == -1){
+        perror("open");
+        return 1;
+    }
+    int fdExecuting = open("tmp/executing.txt", O_CREAT | O_RDONLY, 0666);
+    if (fdExecuting == -1){
+        perror("open");
+        return 1;
+    }
+    int fdCompleted = open("tmp/completed.txt", O_CREAT | O_RDONLY, 0666);
+    if (fdCompleted == -1){
+        perror("open");
+        return 1;
+    }
+
 
     printf("FIFO opened to read...\n");
 
@@ -41,15 +64,113 @@ int main(int argc, char *argv[]){
             memset(buffer, 0, sizeof(buffer));
         }
     } else {
-        while ((bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1)) > 0){
-            buffer[bytes_read] = '\0';
 
-            printf("Received: %s\n", buffer);
-            //run(argv[1], atoi(argv[2]), argv[3], retira_new_line(buffer));
-            escalonamentoFCFS(1,retira_new_line(buffer));
+        int commandsWritten = 1;
+        int executing = 0;
+        int idle = 0;
 
-            // Limpe o buffer para a próxima leitura
-            memset(buffer, 0, sizeof(buffer));
+        // TODO: Fazer um loop infinito enquanto o fifo não for fechado
+        while(1) {
+            printf("Executing: %d\n", executing);
+            sleep(1);
+
+            // Store the command in the idle file if all threads are executing
+            if (executing == atoi(argv[2])) {
+                bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1);
+                buffer[bytes_read] = '\0';
+
+                Process newProcess = {
+                    .pid = commandsWritten,
+                    .parentPid = 0,
+                    .status = PROCESS_STATUS_IDLE,
+                    .elapsedTime = 0.0f,
+                    .t1 = {0, 0},
+                    .t2 = {0, 0},
+                };
+                strcpy(newProcess.command, retira_new_line(buffer));
+                handleProcess(newProcess, newProcess.pid);
+
+                memset(buffer, 0, sizeof(buffer));
+                commandsWritten++;
+            } else if (executing < atoi(argv[2])) {
+                if (idle > 0) {
+                    // read from idle file
+                    int bytesRead = read(fdIdle, buffer, sizeof(buffer) - 1);
+                    buffer[bytesRead] = '\0';
+                    int processNumber;
+                    sscanf(buffer, "%d", &processNumber);
+
+                    char *command = strstr(buffer, " ")  + 1;
+
+                    Process newProcess = {
+                        .pid = processNumber,
+                        .parentPid = 0,
+                        .status = PROCESS_STATUS_RUNNING,
+                        .elapsedTime = 0.0f,
+                        .t1 = {0, 0},
+                        .t2 = {0, 0},
+                    };
+                    strcpy(newProcess.command, retira_new_line(command));
+                    handleProcess(newProcess, newProcess.pid);
+
+                    int child_pid = fork();
+                    if (child_pid == -1) {
+                        perror("Error on creating FCFS child process\n");
+                        return 1;
+                    }
+
+                    if (child_pid == 0) {
+                        escalonamentoFCFS(atoi(argv[2]), newProcess.command, commandsWritten);
+                        _exit(0);
+                    }
+
+                    memset(buffer, 0, sizeof(buffer));
+
+                    // --------------------------------------------
+                    // read from fifo
+                    bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1);
+                    buffer[bytes_read] = '\0';
+
+                    Process fifoProcess = {
+                        .pid = commandsWritten,
+                        .parentPid = 0,
+                        .status = PROCESS_STATUS_IDLE,
+                        .elapsedTime = 0.0f,
+                        .t1 = {0, 0},
+                        .t2 = {0, 0},
+                    };
+                    strcpy(fifoProcess.command, retira_new_line(buffer));
+                    handleProcess(fifoProcess, fifoProcess.pid);
+
+                    memset(buffer, 0, sizeof(buffer));
+                    commandsWritten++;
+                } else {
+                    bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1);
+
+                    buffer[bytes_read] = '\0';
+                    // char *command = strstr(buffer, " ")  + 1;
+                    // printf("Command: %s", command);
+
+                    int child_pid = fork();
+                    if (child_pid == -1) {
+                        perror("Error on creating FCFS child process\n");
+                        return 1;
+                    }
+
+                    if (child_pid == 0) {
+                        escalonamentoFCFS(atoi(argv[2]),retira_new_line(buffer), commandsWritten);
+                        _exit(0);
+                    }
+
+
+                    // Limpe o buffer para a próxima leitura
+                    memset(buffer, 0, sizeof(buffer));
+                    commandsWritten++;
+                }
+            }
+
+            executing = countLines("tmp/executing.txt");
+            idle = countLines("tmp/idle.txt");
         }
     }
 
@@ -58,6 +179,10 @@ int main(int argc, char *argv[]){
     }
 
     close(fifo_fd);
+    close(fdIdle);
+    close(fdScheduled);
+    close(fdExecuting);
+    close(fdCompleted);
 
 return 0; 
 }
