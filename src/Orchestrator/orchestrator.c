@@ -72,7 +72,6 @@ int main(int argc, char *argv[]){
         // TODO: Fazer um loop infinito enquanto o fifo não for fechado
         while(1) {
             sleep(1);
-            printf("BUffer: %s", buffer);
 
             // Store the command in the idle file if all threads are executing
             if (executing == atoi(argv[2])) {
@@ -91,7 +90,7 @@ int main(int argc, char *argv[]){
 
                 memset(buffer, 0, sizeof(buffer));
                 commandsWritten++;
-                printf("Atoi: %d\n", atoi(argv[2]));
+
             } else if (executing < atoi(argv[2])) {
                 if (idle > 0) {
                     // read from idle file
@@ -102,7 +101,7 @@ int main(int argc, char *argv[]){
                     sscanf(buffer, "%d", &processNumber);
 
                     char *command = strstr(buffer, " ")  + 1;
-                    printf("Command: %s", command);
+                    // printf("Command: %s", command);
 
                     Process newProcess = {
                         .pid = processNumber,
@@ -122,7 +121,7 @@ int main(int argc, char *argv[]){
                     }
 
                     if (child_pid == 0) {
-                        escalonamentoFCFS(1, newProcess.command, newProcess.pid);
+                        processCommand(newProcess.command, newProcess.pid);
                         _exit(0);
                     }
 
@@ -167,14 +166,14 @@ int main(int argc, char *argv[]){
                     }
 
                     if (child_pid == 0) {
-                        escalonamentoFCFS(1, fifoProcess.command, fifoProcess.pid);
+                        processCommand(fifoProcess.command, fifoProcess.pid);
                         _exit(0);
                     }
 
                     commandsWritten++;
                 }
             }
-            
+
             executing = countLines("tmp/executing.txt");
             idle = countLines("tmp/idle.txt");
             printf("Executing: %d\n", executing);

@@ -3,6 +3,6 @@
 #include "global.h"
 
 void childProccessFCFS(Process process);
-int escalonamentoFCFS(int parallelTasks, char *comando, int commandsWritten);
+void processCommand(char *comando, int id);
 
 #endif
