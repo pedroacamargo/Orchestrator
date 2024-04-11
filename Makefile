@@ -15,7 +15,7 @@ folders:
 orchestrator: obj/Orchestrator/orchestrator.o $(FILES)
 	$(CC) $(LDFLAGS) $^ -o $@
 
-client: obj/Client/client.o
+client: obj/Client/client.o $(FILES)
 	$(CC) $(LDFLAGS) $^ -o $@
 
 # Regra para arquivos .c no diretório src
@@ -32,7 +32,7 @@ obj/Client/%.o: src/Client/%.c
 clean: 
 	find obj/ -type f -delete
 	find obj/ -type d -empty -delete
-	rm -f tmp/* client orchestrator
+	rm -f tmp/* client orchestrator fifo
 
 
 

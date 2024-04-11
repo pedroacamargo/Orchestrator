@@ -7,6 +7,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 
 #include "lib.h"
 #include "SJF.h"

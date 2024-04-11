@@ -16,11 +16,17 @@ void childProccessSJF(int childPid, int index, char array[][100], int parentPid)
     strcpy(process.command, array[index]);
     process.status = PROCESS_STATUS_RUNNING;
     process.parentPid = parentPid;
-    
+    int res;
     printf("(%d): Executando comando <%s>\n", process.pid, process.command);
 
     gettimeofday(&process.t1, 0);
-    int res = exec(array[index]);
+    int n = checkPipe(array[index]);
+    if (n > 1){
+        printf("PIPE DETECTED\n");
+        execPipe(array[index], n); // no futuro deve retrornar um res 
+    }
+    else 
+        res = exec(array[index]);
     gettimeofday(&process.t2, 0);
 
     process.elapsedTime = (process.t2.tv_sec - process.t1.tv_sec) * 1000.0;      // sec to ms
@@ -35,31 +41,22 @@ void childProccessSJF(int childPid, int index, char array[][100], int parentPid)
     //e outra para escrever os processos que ainda estão a correr (process.status = PROCESS_STATUS_RUNNING)
 }
 
-char* extract_process(const char* process) {
-    const char* space = strchr(process, ' ');
-    return strdup(space + 1);
-}
-
-int escalonamentoSJF(int parallelTasks, char *comandos[]){
-    
-    int num_comandos = 0;
-    while (comandos[num_comandos] != NULL){  // size of commands
-        num_comandos++;
-    }
-
+int escalonamentoSJF(int parallelTasks, char *comandos){
+    printf ("processos: %s\n", comandos);
+    int num_comandos = 1;
     int arraySize = num_comandos;
     char array[num_comandos][100];
     ProcessStatus statusArray[num_comandos];
     int actualProcessIndex = 0, finishedProcesses = 0;
 
-    qsort(comandos, num_comandos, sizeof(char *), compare);
+    //qsort(comandos, num_comandos, sizeof(char *), compare);
 
     for (int i = 0; i < arraySize; i++){
-        strcpy(array[i],extract_process(comandos[i]));
+        strcpy(array[i],extractTimeProcess(comandos));
         if (i < parallelTasks)
             statusArray[i] = PROCESS_STATUS_WAITING;
         else
-            statusArray[i] = PROCESS_STATUS_IDLE;
+            statusArray[i] = PROCESS_STATUS_IDLE;  
     }
 
     while (actualProcessIndex < arraySize) {
