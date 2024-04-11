@@ -23,15 +23,34 @@ int main(int argc, char *argv[]){
     char buffer[256];
     ssize_t bytes_read;
 
-    while ((bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1)) > 0){
-        buffer[bytes_read] = '\0';
+    int policy = checkpolicy(argv[3]);
+    if (policy == INVALID_POLICY) {
+        printf("Invalid policy, server suspended!\n");
+        return 1;
+    }
 
-        printf("Received: %s\n", buffer);
-        //run(argv[1], atoi(argv[2]), argv[3], retira_new_line(buffer));
-        escalonamentoSJF(1,retira_new_line(buffer));
+    if (policy == SJF){
+        while ((bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1)) > 0){
+            buffer[bytes_read] = '\0';
 
-        // Limpe o buffer para a próxima leitura
-        memset(buffer, 0, sizeof(buffer));
+            printf("Received: %s\n", buffer);
+            //run(argv[1], atoi(argv[2]), argv[3], retira_new_line(buffer));
+            escalonamentoSJF(1,retira_new_line(buffer));
+
+            // Limpe o buffer para a próxima leitura
+            memset(buffer, 0, sizeof(buffer));
+        }
+    } else {
+        while ((bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1)) > 0){
+            buffer[bytes_read] = '\0';
+
+            printf("Received: %s\n", buffer);
+            //run(argv[1], atoi(argv[2]), argv[3], retira_new_line(buffer));
+            escalonamentoFCFS(1,retira_new_line(buffer));
+
+            // Limpe o buffer para a próxima leitura
+            memset(buffer, 0, sizeof(buffer));
+        }
     }
 
     if (bytes_read == -1){
