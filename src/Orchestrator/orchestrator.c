@@ -64,13 +64,19 @@ int main(int argc, char *argv[]) {
         }
     } else {
 
-        int commandsWritten = 1;
-        int executing = 0;
-        int idle = 0;
+        //int commandsWritten = 1;
+        //int executing = 0;
+        //int idle = 0;
+        while (1){
+        Process newProcess;
+         while ((bytes_read = read(fifo_fd,&newProcess,sizeof(newProcess)) > 0)){
+            printf("Received process: %s\n", newProcess.command);
+            printf("Received time: %d\n", newProcess.time);   
+        }
 
         // TODO: Fazer um loop infinito enquanto o fifo não for fechado
-        while (1) {
-
+        /* while (1) {
+            
             // Store the command in the idle file if all threads are executing
             if (executing == atoi(argv[2])) {
                 Process newProcess;
@@ -161,10 +167,11 @@ int main(int argc, char *argv[]) {
             idle = countLines("tmp/idle.txt");
             printf("Executing: %d\n", executing);
             memset(buffer, 0, sizeof(buffer));
-        }
+        } */
     }
 
-    close(fifo_fd);
+        close(fifo_fd);
+    }
     close(fdIdle);
     close(fdScheduled);
     close(fdExecuting);
