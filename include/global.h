@@ -43,6 +43,7 @@ typedef enum ProcessStatus {
 typedef struct process {
     int pid;
     int parentPid;
+    int time;
     char command[MAX_COMMAND_SIZE];
     ProcessStatus status;
     struct timeval t1, t2;

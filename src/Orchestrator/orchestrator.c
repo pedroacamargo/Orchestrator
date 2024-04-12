@@ -76,14 +76,16 @@ int main(int argc, char *argv[]){
             Process newProcess;
             memset(&newProcess, 0, sizeof(Process));
             // Store the command in the idle file if all threads are executing
-            if (executing == atoi(argv[2])) { // Todas a threads estão sendo utilizadas
+          /*   if (executing == atoi(argv[2])) { // Todas a threads estão sendo utilizadas
                 bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1);
                 buffer[bytes_read] = '\0';
+                char *first_string = strtok(buffer, "-");
+                char *second_string = strtok(NULL, "\0");
 
                 newProcess.pid = commandsWritten,
                 newProcess.status = PROCESS_STATUS_IDLE;
 
-                strcpy(newProcess.command, retira_new_line(buffer)); 
+                strcpy(newProcess.command, second_string); 
                 handleProcess(newProcess);
 
                 memset(buffer, 0, sizeof(buffer));
@@ -102,7 +104,7 @@ int main(int argc, char *argv[]){
                     // printf("Command: %s", command);
 
                 
-                    strcpy(newProcess.command, retira_new_line(command));
+                    strcpy(newProcess.command, command);
                     handleProcess(newProcess);
 
                     int child_pid = fork();
@@ -123,25 +125,38 @@ int main(int argc, char *argv[]){
 
                     bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1);
                     buffer[bytes_read] = '\0';
+                    char *first_string = strtok(buffer, "-");
+                    char *second_string = strtok(NULL, "\0");
 
                     newProcess.pid = commandsWritten;
                     newProcess.status = PROCESS_STATUS_IDLE;
 
-                    strcpy(newProcess.command, retira_new_line(buffer));
+                    strcpy(newProcess.command, second_string);
                     handleProcess(newProcess);
 
                     commandsWritten++;
-                } else {
-                    bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1);
+                } */ 
+                    while ((bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1)) > 0){;
                     buffer[bytes_read] = '\0';
+                    printf("Received: %s\n", buffer);
+                    char *first_string = strtok(buffer, "-");
+                    char *second_string = strtok(NULL, "\0");
+                    printf("First string: %s\n", first_string);
+                    printf("Second string: %s\n", second_string);
+                    
+                    
+                    
+                    }
+                    
+
                     // printf("Received: %s\n", buffer);
 
-                    newProcess.pid = commandsWritten;
+                   /*  newProcess.pid = commandsWritten;
                     newProcess.status = PROCESS_STATUS_RUNNING;
 
-                    strcpy(newProcess.command, retira_new_line(buffer));
+                    strcpy(newProcess.command, second_string);
                     handleProcess(newProcess);
-
+                    printf("farto");
                     int child_pid = fork();
                     if (child_pid == -1) {
                         perror("Error on creating FCFS child process\n");
@@ -149,18 +164,18 @@ int main(int argc, char *argv[]){
                     }
 
                     if (child_pid == 0) {
-                        processCommand(newProcess);
+                        //processCommand(newProcess);
                         _exit(0);
                     }
 
                     commandsWritten++;
-                }
-            }
+                
+            
 
             executing = countLines("tmp/executing.txt");
             idle = countLines("tmp/idle.txt");
             printf("Executing: %d\n", executing);
-            memset(buffer, 0, sizeof(buffer));
+            memset(buffer, 0, sizeof(buffer)); */
         }
     }
 
