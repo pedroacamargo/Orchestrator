@@ -4,9 +4,9 @@
 char *comandos[] = {"sleep 4", "sleep 3", "sleep 4", "sleep 2", "sleep 3", "sleep 5", "sleep 1", "sleep 2", "ls -l -a -h", "sleep 1"};
 char *comandos_for_sjf[] = {"10 sleep 4", "11 sleep 4", "12 sleep 5", "13 sleep 2", "14 sleep 5", "10 sleep 5", "1 ls /etc | wc -l"};
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[]) {
 
-    if (argc < 4){
+    if (argc < 4) {
         printf("Usage: %s <output-folder> <parallel-tasks> <sched-policy>\n", argv[0]);
         return 1;
     }
@@ -14,32 +14,31 @@ int main(int argc, char *argv[]){
     fifo();
 
     int fifo_fd = open("fifo", O_RDONLY);
-    if (fifo_fd == -1){
+    if (fifo_fd == -1) {
         perror("open");
         return 1;
     }
 
     int fdIdle = open("tmp/idle.txt", O_CREAT | O_RDONLY, 0666);
-    if (fdIdle == -1){
+    if (fdIdle == -1) {
         perror("open");
         return 1;
     }
     int fdScheduled = open("tmp/scheduled.txt", O_CREAT | O_RDONLY, 0666);
-    if (fdScheduled == -1){
+    if (fdScheduled == -1) {
         perror("open");
         return 1;
     }
     int fdExecuting = open("tmp/executing.txt", O_CREAT | O_RDONLY, 0666);
-    if (fdExecuting == -1){
+    if (fdExecuting == -1) {
         perror("open");
         return 1;
     }
     int fdCompleted = open("tmp/completed.txt", O_CREAT | O_RDONLY, 0666);
-    if (fdCompleted == -1){
+    if (fdCompleted == -1) {
         perror("open");
         return 1;
     }
-
 
     printf("Orchestrator started!\n");
 
@@ -52,13 +51,13 @@ int main(int argc, char *argv[]){
         return 1;
     }
 
-    if (policy == SJF){
-        while ((bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1)) > 0){
+    if (policy == SJF) {
+        while ((bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1)) > 0) {
             buffer[bytes_read] = '\0';
 
             printf("Received: %s\n", buffer);
             //run(argv[1], atoi(argv[2]), argv[3], retira_new_line(buffer));
-            escalonamentoSJF(1,retira_new_line(buffer));
+            escalonamentoSJF(1, retira_new_line(buffer));
 
             // Limpe o buffer para a próxima leitura
             memset(buffer, 0, sizeof(buffer));
@@ -70,24 +69,19 @@ int main(int argc, char *argv[]){
         int idle = 0;
 
         // TODO: Fazer um loop infinito enquanto o fifo não for fechado
-        while(1) {
+        while (1) {
 
             // Store the command in the idle file if all threads are executing
             if (executing == atoi(argv[2])) {
-                bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1);
-                buffer[bytes_read] = '\0';
-                Process newProcess = {
-                    .pid = commandsWritten,
-                    .parentPid = 0,
-                    .status = PROCESS_STATUS_IDLE,
-                    .elapsedTime = 0.0f,
-                    .t1 = {0, 0},
-                    .t2 = {0, 0},
-                };
-                strcpy(newProcess.command, retira_new_line(buffer));
-                handleProcess(newProcess, newProcess.pid);
+                Process newProcess;
+                bytes_read = read(fifo_fd, &newProcess, sizeof(newProcess));
 
-                memset(buffer, 0, sizeof(buffer));
+                newProcess.pid = commandsWritten;
+                newProcess.status = PROCESS_STATUS_IDLE;
+
+                handleProcess(newProcess, newProcess.pid);
+                memset(&newProcess, 0, sizeof(newProcess));
+
                 commandsWritten++;
 
             } else if (executing < atoi(argv[2])) {
@@ -128,34 +122,24 @@ int main(int argc, char *argv[]){
 
                     // --------------------------------------------
                     // read from fifo
-                    bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1);
-                    buffer[bytes_read] = '\0';
+                    Process fifoProcess;
+                    bytes_read = read(fifo_fd, &fifoProcess, sizeof(fifoProcess));
+                
+                    fifoProcess.pid = commandsWritten;
+                    fifoProcess.status = PROCESS_STATUS_IDLE;
 
-                    Process fifoProcess = {
-                        .pid = commandsWritten,
-                        .parentPid = 0,
-                        .status = PROCESS_STATUS_IDLE,
-                        .elapsedTime = 0.0f,
-                        .t1 = {0, 0},
-                        .t2 = {0, 0},
-                    };
-                    strcpy(fifoProcess.command, retira_new_line(buffer));
                     handleProcess(fifoProcess, fifoProcess.pid);
 
                     commandsWritten++;
+                    memset(&fifoProcess, 0, sizeof(fifoProcess));
+
                 } else {
-                    bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1);
-                    buffer[bytes_read] = '\0';
-                    // printf("Received: %s\n", buffer);
-                    Process fifoProcess = {
-                        .pid = commandsWritten,
-                        .parentPid = 0,
-                        .status = PROCESS_STATUS_RUNNING,
-                        .elapsedTime = 0.0f,
-                        .t1 = {0, 0},
-                        .t2 = {0, 0},
-                    };
-                    strcpy(fifoProcess.command, retira_new_line(buffer));
+                    Process fifoProcess;
+                    bytes_read = read(fifo_fd, &fifoProcess, sizeof(fifoProcess));
+
+                    fifoProcess.status = PROCESS_STATUS_RUNNING;
+                    fifoProcess.pid = commandsWritten;
+
                     handleProcess(fifoProcess, fifoProcess.pid);
 
                     int child_pid = fork();
@@ -180,16 +164,13 @@ int main(int argc, char *argv[]){
         }
     }
 
-    if (bytes_read == -1){
-        perror("read");
-    }
-
     close(fifo_fd);
     close(fdIdle);
     close(fdScheduled);
     close(fdExecuting);
     close(fdCompleted);
 
-return 0; 
+    return 0;
 }
+
 

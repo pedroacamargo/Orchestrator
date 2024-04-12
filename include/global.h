@@ -44,6 +44,7 @@ typedef struct process {
     int pid;
     int parentPid;
     char command[MAX_COMMAND_SIZE];
+    int time;
     ProcessStatus status;
     struct timeval t1, t2;
     double elapsedTime;
