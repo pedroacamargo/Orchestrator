@@ -3,6 +3,6 @@
 #include "global.h"
 
 void childProccessFCFS(Process process);
-void processCommand(char *comando, int id);
+void processCommand(Process process);
 
 #endif

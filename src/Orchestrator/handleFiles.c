@@ -136,7 +136,7 @@ int handleFiles(char queue[][100], int i, ProcessStatus status) {
     return 0;
 }
 
-int handleProcess(Process p, int command_id) {
+int handleProcess(Process p) {
     char filename[50];
 
     switch (p.status) {
@@ -175,7 +175,7 @@ int handleProcess(Process p, int command_id) {
                 continue;
         }
 
-        removeProcessFromFile(existing_filename, command_id);
+        removeProcessFromFile(existing_filename, p.pid);
     }
 
     int fd = open(filename, O_RDWR | O_CREAT | O_APPEND, 0644); 
@@ -184,7 +184,7 @@ int handleProcess(Process p, int command_id) {
         return -1;
     }
 
-    writeProcess(p, fd, command_id);
+    writeProcess(p, fd, p.pid);
 
     close(fd);
 

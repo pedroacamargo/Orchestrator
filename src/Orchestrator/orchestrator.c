@@ -69,23 +69,22 @@ int main(int argc, char *argv[]){
         int executing = 0;
         int idle = 0;
 
+
         // TODO: Fazer um loop infinito enquanto o fifo não for fechado
         while(1) {
-
+            
+            Process newProcess;
+            memset(&newProcess, 0, sizeof(Process));
             // Store the command in the idle file if all threads are executing
-            if (executing == atoi(argv[2])) {
+            if (executing == atoi(argv[2])) { // Todas a threads estão sendo utilizadas
                 bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1);
                 buffer[bytes_read] = '\0';
-                Process newProcess = {
-                    .pid = commandsWritten,
-                    .parentPid = 0,
-                    .status = PROCESS_STATUS_IDLE,
-                    .elapsedTime = 0.0f,
-                    .t1 = {0, 0},
-                    .t2 = {0, 0},
-                };
-                strcpy(newProcess.command, retira_new_line(buffer));
-                handleProcess(newProcess, newProcess.pid);
+
+                newProcess.pid = commandsWritten,
+                newProcess.status = PROCESS_STATUS_IDLE;
+
+                strcpy(newProcess.command, retira_new_line(buffer)); 
+                handleProcess(newProcess);
 
                 memset(buffer, 0, sizeof(buffer));
                 commandsWritten++;
@@ -102,16 +101,9 @@ int main(int argc, char *argv[]){
                     char *command = strstr(buffer, " ")  + 1;
                     // printf("Command: %s", command);
 
-                    Process newProcess = {
-                        .pid = processNumber,
-                        .parentPid = 0,
-                        .status = PROCESS_STATUS_RUNNING,
-                        .elapsedTime = 0.0f,
-                        .t1 = {0, 0},
-                        .t2 = {0, 0},
-                    };
+                
                     strcpy(newProcess.command, retira_new_line(command));
-                    handleProcess(newProcess, newProcess.pid);
+                    handleProcess(newProcess);
 
                     int child_pid = fork();
                     if (child_pid == -1) {
@@ -120,43 +112,35 @@ int main(int argc, char *argv[]){
                     }
 
                     if (child_pid == 0) {
-                        processCommand(newProcess.command, newProcess.pid);
+                        processCommand(newProcess);
                         _exit(0);
                     }
 
                     memset(buffer, 0, sizeof(buffer));
 
                     // --------------------------------------------
-                    // read from fifo
+
+
                     bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1);
                     buffer[bytes_read] = '\0';
 
-                    Process fifoProcess = {
-                        .pid = commandsWritten,
-                        .parentPid = 0,
-                        .status = PROCESS_STATUS_IDLE,
-                        .elapsedTime = 0.0f,
-                        .t1 = {0, 0},
-                        .t2 = {0, 0},
-                    };
-                    strcpy(fifoProcess.command, retira_new_line(buffer));
-                    handleProcess(fifoProcess, fifoProcess.pid);
+                    newProcess.pid = commandsWritten;
+                    newProcess.status = PROCESS_STATUS_IDLE;
+
+                    strcpy(newProcess.command, retira_new_line(buffer));
+                    handleProcess(newProcess);
 
                     commandsWritten++;
                 } else {
                     bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1);
                     buffer[bytes_read] = '\0';
                     // printf("Received: %s\n", buffer);
-                    Process fifoProcess = {
-                        .pid = commandsWritten,
-                        .parentPid = 0,
-                        .status = PROCESS_STATUS_RUNNING,
-                        .elapsedTime = 0.0f,
-                        .t1 = {0, 0},
-                        .t2 = {0, 0},
-                    };
-                    strcpy(fifoProcess.command, retira_new_line(buffer));
-                    handleProcess(fifoProcess, fifoProcess.pid);
+
+                    newProcess.pid = commandsWritten;
+                    newProcess.status = PROCESS_STATUS_RUNNING;
+
+                    strcpy(newProcess.command, retira_new_line(buffer));
+                    handleProcess(newProcess);
 
                     int child_pid = fork();
                     if (child_pid == -1) {
@@ -165,7 +149,7 @@ int main(int argc, char *argv[]){
                     }
 
                     if (child_pid == 0) {
-                        processCommand(fifoProcess.command, fifoProcess.pid);
+                        processCommand(newProcess);
                         _exit(0);
                     }
 
