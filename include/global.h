@@ -47,6 +47,7 @@ typedef struct process {
     ProcessStatus status;
     struct timeval t1, t2;
     double elapsedTime;
+    int timePrediction;
 } Process;
 
 #include "handleFiles.h"

@@ -2,7 +2,7 @@
 #include "FCFS.h"
 
 void childProccessFCFS(Process process) {
-    printf("(%d): Executando comando <%s>\n", process.pid, process.command);
+    printf("CHILD PROCESS FCFS -> Executing (%d): <%s>\n", process.pid, process.command);
     process.status = PROCESS_STATUS_RUNNING;
     handleProcess(process);
 
@@ -16,13 +16,12 @@ void childProccessFCFS(Process process) {
     }
     else {
         res = exec(process.command);
-        if (res == -1) printf("CHILD (%d): Error on exec\n", process.pid);
+        if (res == -1) printf("(%d): Error on exec\n", process.pid);
     } 
     gettimeofday(&process.t2, 0);
 
     process.elapsedTime = (process.t2.tv_sec - process.t1.tv_sec) * 1000.0;      // sec to ms
     process.elapsedTime += (process.t2.tv_usec - process.t1.tv_usec) / 1000.0;   // us to ms
-    printf("Time: %.3f ms\n", process.elapsedTime);
 
     process.status = PROCESS_STATUS_FINISHED;
     handleProcess(process);
@@ -32,7 +31,6 @@ void childProccessFCFS(Process process) {
 
 void processCommand(Process process) {
     handleProcess(process);
-
 
     pid_t pid = fork();
     if (pid == -1) perror("Error on fork\n");
@@ -53,9 +51,12 @@ void processCommand(Process process) {
             buffer[bytesRead] = '\0';
             int processNumber;
             sscanf(buffer, "%d", &processNumber);
+            printf("Process Number: %d\n", processNumber);
 
-            char *command = strstr(buffer, " ")  + 1;
-            printf("Command: %s", command);
+
+            char *str = strstr(buffer, " ")  + 1; 
+            char *command = strtok(str, "-");
+            char *commandEnd = strtok(NULL, "\0");
 
             Process newProcess = {
                 .pid = processNumber,
@@ -64,8 +65,11 @@ void processCommand(Process process) {
                 .elapsedTime = 0.0f,
                 .t1 = {0, 0},
                 .t2 = {0, 0},
+                .timePrediction = atoi(commandEnd)
             };
-            strcpy(newProcess.command, retira_new_line(command));
+            strcpy(newProcess.command, command);
+            printf("Command: %s\n", newProcess.command);
+            printf("Time Prediction: %d\n", newProcess.timePrediction);
             handleProcess(newProcess);
 
             int child_pid = fork();

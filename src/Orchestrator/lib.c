@@ -172,15 +172,15 @@ int writeFifo(){
     char BUFFER[256];
     size_t read_bytes;
 
-    while ((read_bytes = read(STDIN_FILENO, BUFFER, sizeof(BUFFER))) > 0) {
-        if (write(fifo_fd, BUFFER, read_bytes) == -1) {
-            perror("write");
-            exit(1);
-        }
+    read_bytes = read(STDIN_FILENO, BUFFER, sizeof(BUFFER));
 
-        BUFFER[read_bytes] = '\0';
-        printf("Sent: %s", BUFFER);
+    if (write(fifo_fd, BUFFER, read_bytes) == -1) {
+        perror("write");
+        exit(1);
     }
+
+    BUFFER[read_bytes] = '\0';
+    printf("Sent: %s", BUFFER);
 
     
     close(fifo_fd);

@@ -5,9 +5,9 @@ void writeProcess(Process p, int fd, int command_id) {
     int size;
 
     if (p.status != PROCESS_STATUS_FINISHED) {
-        size = snprintf(buffer, sizeof(buffer), "%d: %s\n", command_id, p.command);
+        size = snprintf(buffer, sizeof(buffer), "%d: %s-%d\n", p.pid, p.command, p.timePrediction);
     } else {
-        size = snprintf(buffer, sizeof(buffer), "%d: %s [%f]\n", command_id, p.command, p.elapsedTime);
+        size = snprintf(buffer, sizeof(buffer), "%d: %s [%f]\n", p.pid, p.command, p.elapsedTime);
     }
 
     if (size < 0 || size >= sizeof(buffer)) {
@@ -18,6 +18,7 @@ void writeProcess(Process p, int fd, int command_id) {
     if (write(fd, buffer, size) != size) {
         perror("Error writing to file");
     }
+    memset(buffer, 0, sizeof(buffer));
 }
 
 int removeProcessFromFile(const char *filename, int command_id) {
@@ -176,7 +177,9 @@ int handleProcess(Process p) {
         }
 
         removeProcessFromFile(existing_filename, p.pid);
+        memset(existing_filename, 0, sizeof(existing_filename));
     }
+
 
     int fd = open(filename, O_RDWR | O_CREAT | O_APPEND, 0644); 
     if (fd == -1) { 
