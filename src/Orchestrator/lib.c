@@ -52,44 +52,60 @@ int exec(const char* command) {
 	return res;
 }
 
-void execPipe(const char *command, int number_processes){
+void execPipe(const char *command, int number_processes) {
+    char **processArray = malloc((number_processes) * sizeof(char*));
 
-    char** processArray = malloc((number_processes) * sizeof(char*));
-    
     extractProcessPipe(command, number_processes, processArray);
 
-    for(int i = 0; i < number_processes; i++){
-        printf("Process %d: %s\n", i, processArray[i]); // so para debug 
+    // Create pipes
+    int pipes[number_processes - 1][2];
+    for (int i = 0; i < number_processes - 1; i++) {
+        pipe(pipes[i]);
     }
 
-    int fd[2];
-    pipe(fd);
-    if (fork() == 0) {
-        close(fd[0]);
-        dup2(fd[1], STDOUT_FILENO);
-        close(fd[1]);
-
-        exec(processArray[0]);                 //implementado como esta no necc e como voces fizeram nas aulas 
-        _exit(-1);                             //pode ser melhorado, quem quiser esta a vontade
-    }	                   					   // deve retornar o res mas ns como se faz, uma vez
-    close(fd[1]);                              //que no exec isso vem do wait e aqui nao temos wait "normal"
-    wait(NULL);
-
-    if (fork() == 0) {
-        dup2(fd[0], STDIN_FILENO);
-        close(fd[0]);
-
-        exec(processArray[1]);
-        _exit(-1);
+    for (int i = 0; i < number_processes; i++) {
+        printf("Process %d: %s\n", i, processArray[i]); // for debugging
     }
-    close(fd[0]);
-    wait(NULL);
 
-    // Free the allocated memory
-    for (int i = 0; i < number_processes ; i++) {
+    // Execute processes
+    for (int i = 0; i < number_processes; i++) {
+        if (fork() == 0) {
+            // Redirect input
+            if (i != 0) {
+                dup2(pipes[i - 1][0], 0);
+            }
+
+            // Redirect output
+            if (i != number_processes - 1) {
+                dup2(pipes[i][1], 1);
+            }
+
+            // Close all pipe fds
+            for (int j = 0; j < number_processes - 1; j++) {
+                close(pipes[j][0]);
+                close(pipes[j][1]);
+            }
+
+            exec(processArray[i]);
+            _exit(EXIT_FAILURE);
+        }
+    }
+
+    // Close all pipe fds
+    for (int i = 0; i < number_processes - 1; i++) {
+        close(pipes[i][0]);
+        close(pipes[i][1]);
+    }
+
+    // Wait for all processes to finish
+    for (int i = 0; i < number_processes; i++) {
+        wait(NULL);
+    }
+
+    // Free allocated memory
+    for (int i = 0; i < number_processes; i++) {
         free(processArray[i]);
     }
-
 }
 
 int checkPipe(const char *command){
