@@ -5,9 +5,9 @@ void writeProcess(Process p, int fd, int command_id) {
     int size;
 
     if (p.status != PROCESS_STATUS_FINISHED) {
-        size = snprintf(buffer, sizeof(buffer), "%d: %s\n", command_id, p.command);
+        size = snprintf(buffer, sizeof(buffer), "%d: %s-%d\n", p.pid, p.command, p.timePrediction);
     } else {
-        size = snprintf(buffer, sizeof(buffer), "%d: %s [%f]\n", command_id, p.command, p.elapsedTime);
+        size = snprintf(buffer, sizeof(buffer), "%d: %s [%f]\n", p.pid, p.command, p.elapsedTime);
     }
 
     if (size < 0 || size >= sizeof(buffer)) {
@@ -18,6 +18,7 @@ void writeProcess(Process p, int fd, int command_id) {
     if (write(fd, buffer, size) != size) {
         perror("Error writing to file");
     }
+    memset(buffer, 0, sizeof(buffer));
 }
 
 int removeProcessFromFile(const char *filename, int command_id) {
@@ -136,7 +137,7 @@ int handleFiles(char queue[][100], int i, ProcessStatus status) {
     return 0;
 }
 
-int handleProcess(Process p, int command_id) {
+int handleProcess(Process p) {
     char filename[50];
 
     switch (p.status) {
@@ -175,8 +176,10 @@ int handleProcess(Process p, int command_id) {
                 continue;
         }
 
-        removeProcessFromFile(existing_filename, command_id);
+        removeProcessFromFile(existing_filename, p.pid);
+        memset(existing_filename, 0, sizeof(existing_filename));
     }
+
 
     int fd = open(filename, O_RDWR | O_CREAT | O_APPEND, 0644); 
     if (fd == -1) { 
@@ -184,7 +187,7 @@ int handleProcess(Process p, int command_id) {
         return -1;
     }
 
-    writeProcess(p, fd, command_id);
+    writeProcess(p, fd, p.pid);
 
     close(fd);
 

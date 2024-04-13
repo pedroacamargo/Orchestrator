@@ -13,7 +13,7 @@ int main(int argc, char *argv[]){
 
     fifo();
 
-    int fifo_fd = open("fifo", O_RDONLY);
+    int fifo_fd = open("fifo", O_RDWR);
     if (fifo_fd == -1){
         perror("open");
         return 1;
@@ -68,95 +68,94 @@ int main(int argc, char *argv[]){
         int commandsWritten = 1;
         int executing = 0;
         int idle = 0;
-
-        // TODO: Fazer um loop infinito enquanto o fifo não for fechado
+        printf("=============== FCFS ===============\n");
         while(1) {
+            printf("Commands written: %d\n", commandsWritten);
+            if (idle > 0) {
+                idle = countLines("tmp/idle.txt");
+            }
+            
+            Process newProcess;
+            memset(&newProcess, 0, sizeof(Process));
+            printf("Waiting for new process...\n");
+
+            if ((bytes_read = read(fifo_fd, buffer, sizeof(buffer))) > 0){;
+                buffer[bytes_read] = '\0';
+                char *first_string = strtok(buffer, "-");
+                char *second_string = strtok(NULL, "\0");
+                printf("---> New process received\n");
+                printf("--> Time predicted: %s miliseconds\n", first_string);
+                printf("-> Command to be executed: %s\n", second_string);    
+
+                newProcess.pid = commandsWritten;
+                strcpy(newProcess.command, second_string);
+                newProcess.timePrediction = atoi(first_string);
+                memset(buffer, 0, sizeof(buffer));
+            }
+
 
             // Store the command in the idle file if all threads are executing
-            if (executing == atoi(argv[2])) {
-                bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1);
-                buffer[bytes_read] = '\0';
-                Process newProcess = {
-                    .pid = commandsWritten,
-                    .parentPid = 0,
-                    .status = PROCESS_STATUS_IDLE,
-                    .elapsedTime = 0.0f,
-                    .t1 = {0, 0},
-                    .t2 = {0, 0},
-                };
-                strcpy(newProcess.command, retira_new_line(buffer));
-                handleProcess(newProcess, newProcess.pid);
+            if (executing >= atoi(argv[2])) { // Todas a threads estão sendo utilizadas
+
+                newProcess.status = PROCESS_STATUS_IDLE;
+
+                handleProcess(newProcess);
 
                 memset(buffer, 0, sizeof(buffer));
                 commandsWritten++;
-
             } else if (executing < atoi(argv[2])) {
                 if (idle > 0) {
-                    // read from idle file
+                    // read from idle file           
+                    memset(buffer, 0, sizeof(buffer));         
                     int bytesRead = read(fdIdle, buffer, sizeof(buffer) - 1);
                     lseek(fdIdle, 0, SEEK_SET);
                     buffer[bytesRead] = '\0';
                     int processNumber;
                     sscanf(buffer, "%d", &processNumber);
+                    printf("Process Number: %d\n", processNumber);
 
-                    char *command = strstr(buffer, " ")  + 1;
-                    // printf("Command: %s", command);
+                    char *str = strstr(buffer, " ")  + 1;
 
-                    Process newProcess = {
+                    char *command = strtok(str, "-");
+                    char *commandEnd = strtok(NULL, "\0");
+
+                    Process idleProcess = {
                         .pid = processNumber,
                         .parentPid = 0,
                         .status = PROCESS_STATUS_RUNNING,
                         .elapsedTime = 0.0f,
                         .t1 = {0, 0},
                         .t2 = {0, 0},
+                        .timePrediction = atoi(commandEnd)
                     };
-                    strcpy(newProcess.command, retira_new_line(command));
-                    handleProcess(newProcess, newProcess.pid);
+                    strcpy(idleProcess.command, command);
+                    printf("Command: %s\n", idleProcess.command);
+                    printf("Time Prediction: %d\n", idleProcess.timePrediction);
+                    handleProcess(idleProcess);
 
                     int child_pid = fork();
                     if (child_pid == -1) {
                         perror("Error on creating FCFS child process\n");
-                        return 1;
                     }
 
                     if (child_pid == 0) {
-                        processCommand(newProcess.command, newProcess.pid);
+                        processCommand(idleProcess);
                         _exit(0);
                     }
 
                     memset(buffer, 0, sizeof(buffer));
 
                     // --------------------------------------------
-                    // read from fifo
-                    bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1);
-                    buffer[bytes_read] = '\0';
 
-                    Process fifoProcess = {
-                        .pid = commandsWritten,
-                        .parentPid = 0,
-                        .status = PROCESS_STATUS_IDLE,
-                        .elapsedTime = 0.0f,
-                        .t1 = {0, 0},
-                        .t2 = {0, 0},
-                    };
-                    strcpy(fifoProcess.command, retira_new_line(buffer));
-                    handleProcess(fifoProcess, fifoProcess.pid);
+                    newProcess.status = PROCESS_STATUS_IDLE;
+                    handleProcess(newProcess);
 
                     commandsWritten++;
                 } else {
-                    bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1);
-                    buffer[bytes_read] = '\0';
-                    // printf("Received: %s\n", buffer);
-                    Process fifoProcess = {
-                        .pid = commandsWritten,
-                        .parentPid = 0,
-                        .status = PROCESS_STATUS_RUNNING,
-                        .elapsedTime = 0.0f,
-                        .t1 = {0, 0},
-                        .t2 = {0, 0},
-                    };
-                    strcpy(fifoProcess.command, retira_new_line(buffer));
-                    handleProcess(fifoProcess, fifoProcess.pid);
+                    newProcess.status = PROCESS_STATUS_RUNNING;
+                    newProcess.elapsedTime = 0.0f;
+                    newProcess.t1 = (struct timeval){0, 0};
+                    newProcess.t2 = (struct timeval){0, 0};
 
                     int child_pid = fork();
                     if (child_pid == -1) {
@@ -165,7 +164,7 @@ int main(int argc, char *argv[]){
                     }
 
                     if (child_pid == 0) {
-                        processCommand(fifoProcess.command, fifoProcess.pid);
+                        processCommand(newProcess);
                         _exit(0);
                     }
 
