@@ -1,6 +1,8 @@
 #ifndef SJF_H
 #define SJF_H
+#include "global.h"
 
-int escalonamentoSJF(int parallelTasks, char *comandos);
+void processCommand_2(Process process);
+void childProccessSJF(Process process);
 
 #endif

@@ -12,7 +12,6 @@
 #include <sys/stat.h>
 
 #include "lib.h"
-#include "SJF.h"
 
 /**
  * @brief Constantes para as politicas de escalonamento

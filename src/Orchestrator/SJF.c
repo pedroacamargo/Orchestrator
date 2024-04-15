@@ -1,98 +1,87 @@
 #include "global.h"
+#include "SJF.h"
 
-int compare(const void *a, const void *b){
-    // Cast the void pointers to char pointers
-    const char *str_a = *(const char **)a;
-    const char *str_b = *(const char **)b;
 
-    int num_a = atoi(str_a);
-    int num_b = atoi(str_b);
-    return num_a - num_b;
-}
-
-void childProccessSJF(int childPid, int index, char array[][100], int parentPid){
-    Process process;
-    process.pid = childPid;
-    strcpy(process.command, array[index]);
+void childProccessSJF(Process process) {
+    printf("CHILD PROCESS SJF -> Executing (%d): <%s>\n", process.pid, process.command);
     process.status = PROCESS_STATUS_RUNNING;
-    process.parentPid = parentPid;
+    handleProcess(process);
+
+    int n = checkPipe(process.command);
     int res;
-    printf("(%d): Executando comando <%s>\n", process.pid, process.command);
 
     gettimeofday(&process.t1, 0);
-    int n = checkPipe(array[index]);
-    if (n > 1){
-        printf("PIPE DETECTED\n");
-        execPipe(array[index], n); // no futuro deve retrornar um res 
-    }
-    else 
-        res = exec(array[index]);
+    if (n > 1) execPipe(process.command, n);
+    else {
+        res = exec(process.command);
+        if (res == -1) printf("(%d): Error on exec\n", process.pid);
+    }   
     gettimeofday(&process.t2, 0);
 
     process.elapsedTime = (process.t2.tv_sec - process.t1.tv_sec) * 1000.0;      // sec to ms
     process.elapsedTime += (process.t2.tv_usec - process.t1.tv_usec) / 1000.0;   // us to ms
-    printf("Time: %.3f ms\n", process.elapsedTime);
 
-    if (res == -1) printf("CHILD (%d): Error on exec\n", childPid);
+    process.status = PROCESS_STATUS_FINISHED;
+    handleProcess(process);
+
     _exit(res);
-    //Moniz Aqui terás de chamar as funções que estao no handleFiles.c para escreveres no ficheiro de output
-    //Os processos que terminaram e os respetetivos tempos de execução reais (process.elapsedTime)
-    //Duas vezes chamas as funcoes do HandleFiles.c, uma para escrever os processos que terminaram 
-    //e outra para escrever os processos que ainda estão a correr (process.status = PROCESS_STATUS_RUNNING)
 }
 
-int escalonamentoSJF(int parallelTasks, char *comandos){
-    printf ("processos: %s\n", comandos);
-    int num_comandos = 1;
-    int arraySize = num_comandos;
-    char array[num_comandos][100];
-    ProcessStatus statusArray[num_comandos];
-    int actualProcessIndex = 0, finishedProcesses = 0;
 
-    //qsort(comandos, num_comandos, sizeof(char *), compare);
+void processCommand_2(Process process) {
+    pid_t pid = fork();
+    if (pid == -1) perror("Error on fork\n");
+    if (pid == 0) childProccessSJF(process);
 
-    for (int i = 0; i < arraySize; i++){
-        strcpy(array[i],extractTimeProcess(comandos));
-        if (i < parallelTasks)
-            statusArray[i] = PROCESS_STATUS_WAITING;
-        else
-            statusArray[i] = PROCESS_STATUS_IDLE;  
+    else {
+        int status;
+        int terminated_pid = wait(&status);
+        printf("Child process %d terminated with status %d\n", terminated_pid, WEXITSTATUS(status));
+
+        int fdIdle = open("tmp/idle.txt", O_RDONLY, 0644);
+        lseek(fdIdle, 0, SEEK_SET);
+
+        if (countLines("tmp/idle.txt") > 0) {
+            char buffer[MAX_COMMAND_SIZE];
+            int bytesRead = read(fdIdle, buffer, sizeof(buffer) - 1);
+            buffer[bytesRead] = '\0';
+            int processNumber;
+            sscanf(buffer, "%d", &processNumber);
+            printf("Process Number: %d\n", processNumber);
+
+
+            char *str = strstr(buffer, " ")  + 1; 
+            char *command = strtok(str, "-");
+            char *commandEnd = strtok(NULL, "\0");
+
+            Process newProcess = {
+                .pid = processNumber,
+                .parentPid = 0,
+                .status = PROCESS_STATUS_RUNNING,
+                .elapsedTime = 0.0f,
+                .t1 = {0, 0},
+                .t2 = {0, 0},
+                .timePrediction = atoi(commandEnd)
+            };
+            strcpy(newProcess.command, command);
+            printf("Command: %s\n", newProcess.command);
+            printf("Time Prediction: %d\n", newProcess.timePrediction);
+            handleProcess(newProcess);
+
+            int child_pid = fork();
+            if (child_pid == -1) {
+                perror("Error on creating FCFS child process\n");
+                return;
+            }
+
+            if (child_pid == 0) {
+                processCommand_2(newProcess);
+                _exit(0);
+            }
+        }
+
     }
-
-    while (actualProcessIndex < arraySize) {
-        while (actualProcessIndex < num_comandos && statusArray[actualProcessIndex] == PROCESS_STATUS_WAITING){
-            pid_t pid = fork();
-            if (pid == -1)
-                perror("Error on fork\n");
-            if (pid == 0)
-                childProccessSJF(getpid(), actualProcessIndex, array, getppid());
-            actualProcessIndex++;
-        }
-        
-        for (; finishedProcesses < actualProcessIndex && actualProcessIndex <= num_comandos; finishedProcesses++){
-            int status;
-            int terminated_pid = wait(&status);
-            printf("Child process %d terminated with status %d\n", terminated_pid, WEXITSTATUS(status));
-            statusArray[finishedProcesses] = PROCESS_STATUS_FINISHED;
-            if (finishedProcesses + parallelTasks < num_comandos){
-                statusArray[finishedProcesses + parallelTasks] = PROCESS_STATUS_WAITING;
-            }
-
-            // Simulate the creation of a new process (Thread) if there are still processes to be executed
-
-            if (actualProcessIndex < num_comandos && statusArray[actualProcessIndex] == PROCESS_STATUS_WAITING){
-                pid_t pid = fork();
-                if (pid == -1)
-                    perror("Error on fork\n");
-                if (pid == 0)
-                    childProccessSJF(getpid(), actualProcessIndex, array, getppid());
-                actualProcessIndex++;
-            }
-            printf("actualProcessIndex: %d, finishedProcesses: %d\n", actualProcessIndex, finishedProcesses);
-        }
-        printf("actualProcessIndex: %d, finishedProcesses: %d\n", actualProcessIndex, finishedProcesses);
-    } 
-
-    return 0; 
-
+ 
 }
+
+

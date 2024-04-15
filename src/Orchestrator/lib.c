@@ -167,3 +167,8 @@ void extractProcessPipe(const char *command, int number_processes, char **proces
     processArray[index] = NULL;  
 
 }
+
+
+
+
+
