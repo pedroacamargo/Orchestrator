@@ -54,8 +54,5 @@ char* extractTimeProcess(char* command);
 
 
 
-int fifo();
-int writeFifo();
 char *retira_new_line(char *str);
-void run(char *output_folder, int parallel_tasks, char *sched_policy, char *command);
 #endif

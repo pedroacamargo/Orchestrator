@@ -11,13 +11,12 @@ int main(int argc, char *argv[]){
         return 1;
     }
 
-    fifo();
-
-    int fifo_fd = open("fifo", O_RDWR);
-    if (fifo_fd == -1){
-        perror("open");
-        return 1;
-    }
+    // Create the FIFO
+    int fd = mkfifo(SERVER, 0666);
+	if (fd == -1) {
+		perror("open");
+		_exit(1);
+	}
 
     int fdIdle = open("tmp/idle.txt", O_CREAT | O_RDONLY, 0666);
     if (fdIdle == -1){
@@ -53,16 +52,7 @@ int main(int argc, char *argv[]){
     }
 
     if (policy == SJF){
-        while ((bytes_read = read(fifo_fd, buffer, sizeof(buffer) - 1)) > 0){
-            buffer[bytes_read] = '\0';
-
-            printf("Received: %s\n", buffer);
-            //run(argv[1], atoi(argv[2]), argv[3], retira_new_line(buffer));
-            escalonamentoSJF(1,retira_new_line(buffer));
-
-            // Limpe o buffer para a próxima leitura
-            memset(buffer, 0, sizeof(buffer));
-        }
+       
     } else {
 
         int commandsWritten = 1;
@@ -70,6 +60,19 @@ int main(int argc, char *argv[]){
         int idle = 0;
         printf("=============== FCFS ===============\n");
         while(1) {
+
+            int fd = open(SERVER, O_RDONLY);
+		        if (fd == -1) { 
+			        perror("open");
+			        _exit(1);
+		        }
+
+            int fd_client = open(CLIENT, O_WRONLY);
+		        if (fd_client == -1) {
+			        perror("open");
+			        _exit(1);
+		        } 
+
             printf("Commands written: %d\n", commandsWritten);
             if (idle > 0) {
                 idle = countLines("tmp/idle.txt");
@@ -79,7 +82,7 @@ int main(int argc, char *argv[]){
             memset(&newProcess, 0, sizeof(Process));
             printf("Waiting for new process...\n");
 
-            if ((bytes_read = read(fifo_fd, buffer, sizeof(buffer))) > 0){;
+            if ((bytes_read = read(fd, buffer, sizeof(buffer))) > 0){;
                 buffer[bytes_read] = '\0';
                 char *first_string = strtok(buffer, "-");
                 char *second_string = strtok(NULL, "\0");
@@ -91,6 +94,15 @@ int main(int argc, char *argv[]){
                 strcpy(newProcess.command, second_string);
                 newProcess.timePrediction = atoi(first_string);
                 memset(buffer, 0, sizeof(buffer));
+
+               
+                sprintf(buffer, "TASK %d Received", newProcess.pid);
+
+                if (write(fd_client, buffer, strlen(buffer)) == -1) {
+                    perror("write");
+                    _exit(1);
+                }
+                memset(buffer, 0, sizeof(buffer));    
             }
 
 
@@ -176,14 +188,12 @@ int main(int argc, char *argv[]){
             idle = countLines("tmp/idle.txt");
             printf("Executing: %d\n", executing);
             memset(buffer, 0, sizeof(buffer));
+
+            close(fd_client);
+		    close(fd);
         }
     }
 
-    if (bytes_read == -1){
-        perror("read");
-    }
-
-    close(fifo_fd);
     close(fdIdle);
     close(fdScheduled);
     close(fdExecuting);
