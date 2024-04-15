@@ -50,7 +50,7 @@ void processCommand(Process process) {
             int bytesRead = read(fdIdle, buffer, sizeof(buffer) - 1);
             buffer[bytesRead] = '\0';
             int processNumber;
-            sscanf(buffer, "%d", &processNumber);
+            sscanf(buffer, "%d:", &processNumber);
             printf("Process Number: %d\n", processNumber);
 
 
