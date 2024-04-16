@@ -1,37 +1,10 @@
 #include "global.h"
-#include "SJF.h"
 
 
-void childProccessSJF(Process process) {
-    printf("CHILD PROCESS SJF -> Executing (%d): <%s>\n", process.pid, process.command);
-    process.status = PROCESS_STATUS_RUNNING;
-    handleProcess(process);
-
-    int n = checkPipe(process.command);
-    int res;
-
-    gettimeofday(&process.t1, 0);
-    if (n > 1) execPipe(process.command, n);
-    else {
-        res = exec(process.command);
-        if (res == -1) printf("(%d): Error on exec\n", process.pid);
-    }   
-    gettimeofday(&process.t2, 0);
-
-    process.elapsedTime = (process.t2.tv_sec - process.t1.tv_sec) * 1000.0;      // sec to ms
-    process.elapsedTime += (process.t2.tv_usec - process.t1.tv_usec) / 1000.0;   // us to ms
-
-    process.status = PROCESS_STATUS_FINISHED;
-    handleProcess(process);
-
-    _exit(res);
-}
-
-
-void processCommand_2(Process process) {
+void processCommandSJF(Process process) {
     pid_t pid = fork();
-    if (pid == -1) perror("Error on fork\n");
-    if (pid == 0) childProccessSJF(process);
+    if (pid == -1) perror("Error on fork");
+    if (pid == 0) childProccess(process);
 
     else {
         int status;
@@ -70,12 +43,12 @@ void processCommand_2(Process process) {
 
             int child_pid = fork();
             if (child_pid == -1) {
-                perror("Error on creating FCFS child process\n");
+                perror("Error on creating FCFS child process");
                 return;
             }
 
             if (child_pid == 0) {
-                processCommand_2(newProcess);
+                processCommandSJF(newProcess);
                 _exit(0);
             }
         }

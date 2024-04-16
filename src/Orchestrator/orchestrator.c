@@ -1,93 +1,72 @@
 #include "global.h"
-#include "FCFS.h"
-#include "SJF.h"
 
-char *comandos[] = {"sleep 4", "sleep 3", "sleep 4", "sleep 2", "sleep 3", "sleep 5", "sleep 1", "sleep 2", "ls -l -a -h", "sleep 1"};
-char *comandos_for_sjf[] = {"10 sleep 4", "11 sleep 4", "12 sleep 5", "13 sleep 2", "14 sleep 5", "10 sleep 5", "1 ls /etc | wc -l"};
+int main(int argc, char *argv[]){
+    
 
-int main(int argc, char *argv[])
-{
-
-    if (argc < 4)
-    {
+    if (argc < 4){
         printf("Usage: %s <output-folder> <parallel-tasks> <sched-policy>\n", argv[0]);
         return 1;
     }
 
-    // Create the FIFO
     int fd = mkfifo(SERVER, 0666);
-    if (fd == -1)
-    {
-        perror("open");
+    if (fd == -1){
+        perror("Open fifo server");
         _exit(1);
     }
 
     int fdIdle = open("tmp/idle.txt", O_CREAT | O_RDONLY, 0666);
-    if (fdIdle == -1)
-    {
-        perror("open");
+    if (fdIdle == -1){
+        perror("Open ide.txt");
         return 1;
     }
-    int fdScheduled = open("tmp/scheduled.txt", O_CREAT | O_RDONLY, 0666);
-    if (fdScheduled == -1)
-    {
-        perror("open");
-        return 1;
-    }
+
     int fdExecuting = open("tmp/executing.txt", O_CREAT | O_RDONLY, 0666);
-    if (fdExecuting == -1)
-    {
-        perror("open");
+    if (fdExecuting == -1){
+        perror("Open executing.txt");
         return 1;
     }
+
     int fdCompleted = open("tmp/completed.txt", O_CREAT | O_RDONLY, 0666);
-    if (fdCompleted == -1)
-    {
-        perror("open");
+    if (fdCompleted == -1){
+        perror("Open completed.txt");
         return 1;
     }
 
-    printf("Orchestrator started!\n");
 
-    char buffer[256];
-    ssize_t bytes_read;
 
-    int policy = checkpolicy(argv[3]);
-    if (policy == INVALID_POLICY)
-    {
+    if (checkpolicy(argv[3]) == INVALID_POLICY){
         printf("Invalid policy, server suspended!\n");
         return 1;
     }
+    
+    else{
 
-    if (policy == SJF)
-    {
+        printf("Orchestrator started!\n");
+
+        char buffer[256];
+        ssize_t bytes_read;
         int commandsWritten = 1;
-        printf("=============== SJF ===============\n");
-        while (1)
-        {
+
+        while (1){
 
             int fd = open(SERVER, O_RDONLY);
-            if (fd == -1)
-            {
-                perror("open");
+            if (fd == -1){
+                perror("Open fifo server");
                 _exit(1);
             }
 
             int fd_client = open(CLIENT, O_WRONLY);
-            if (fd_client == -1)
-            {
-                perror("open");
+            if (fd_client == -1){
+                perror("Open fifo client");
                 _exit(1);
             }
-            
-            
+
             Process newProcess;
             memset(&newProcess, 0, sizeof(Process));
             printf("Waiting for new process...\n");
 
-            if ((bytes_read = read(fd, buffer, sizeof(buffer))) > 0)
-            {
-                
+            if ((bytes_read = read(fd, buffer, sizeof(buffer))) > 0){
+
                 buffer[bytes_read] = '\0';
                 char *first_string = strtok(buffer, "-");
                 char *second_string = strtok(NULL, "\0");
@@ -102,37 +81,36 @@ int main(int argc, char *argv[])
 
                 sprintf(buffer, "TASK %d Received", newProcess.pid);
 
-                if (write(fd_client, buffer, strlen(buffer)) == -1)
-                {
+                if (write(fd_client, buffer, strlen(buffer)) == -1){
                     perror("write");
                     _exit(1);
                 }
                 memset(buffer, 0, sizeof(buffer));
             }
 
-            if (countLines("tmp/executing.txt") < atoi(argv[2]) && countLines("tmp/idle.txt") == 0)
-            { 
+            if (countLines("tmp/executing.txt") < atoi(argv[2]) && countLines("tmp/idle.txt") == 0){
 
-                    printf("ola eu sou  foda\n");
-                    int child_pid = fork();
-                    if (child_pid == -1)
-                    {
-                        perror("Error on creating FCFS child process\n");
+                int child_pid = fork();
+
+                if (child_pid == -1){
+                    perror("Error on creating FCFS child process");
                     }
 
-                    if (child_pid == 0)
-                    {
-                        processCommand_2(newProcess);
-                        _exit(0);
-                    }
-                    commandsWritten++;
-            }           
-             else {
+                if (child_pid == 0){
+                    if (checkpolicy(argv[3]) == SJF) processCommandSJF(newProcess);
+                    else if( checkpolicy(argv[3]) == FCFS) processCommandFCFS(newProcess);
+                    _exit(0);
+                }
+
+                commandsWritten++;
+            
+            }
+            else {
                 newProcess.status = PROCESS_STATUS_IDLE;
                 handleProcess(newProcess);
-                commandsWritten ++;
+                commandsWritten++;
             }
-            
+
             memset(buffer, 0, sizeof(buffer));
             close(fd_client);
             close(fd);
@@ -140,7 +118,6 @@ int main(int argc, char *argv[])
     }
 
     close(fdIdle);
-    close(fdScheduled);
     close(fdExecuting);
     close(fdCompleted);
 

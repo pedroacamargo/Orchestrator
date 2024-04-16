@@ -2,7 +2,6 @@
 #define SJF_H
 #include "global.h"
 
-void processCommand_2(Process process);
-void childProccessSJF(Process process);
+void processCommandSJF(Process process);
 
 #endif
