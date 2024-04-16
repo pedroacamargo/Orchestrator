@@ -46,13 +46,8 @@ char *space(char *str);
 void extractProcessPipe(const char *command, int number_processes, char **processArray);
 
 /**
- * @brief Extract the time from the command
+ * @brief Execute a command with fork
  * @param command The command to be executed
- * @returns the command without the time to be executed
 */
-char* extractTimeProcess(char* command);
-
-
-
-char *retira_new_line(char *str);
+void childProccess(Process process);
 #endif

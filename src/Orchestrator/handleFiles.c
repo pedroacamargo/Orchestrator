@@ -79,9 +79,6 @@ int handleProcess(Process p) {
         case PROCESS_STATUS_RUNNING:
             strcpy(filename, "tmp/executing.txt");
             break;
-        case PROCESS_STATUS_WAITING:
-            strcpy(filename, "tmp/scheduled.txt");
-            break;
         case PROCESS_STATUS_IDLE:
             strcpy(filename, "tmp/idle.txt");
             break;
@@ -97,9 +94,6 @@ int handleProcess(Process p) {
         switch (i) {
             case PROCESS_STATUS_RUNNING:
                 strcpy(existing_filename, "tmp/executing.txt");
-                break;
-            case PROCESS_STATUS_WAITING:
-                strcpy(existing_filename, "tmp/scheduled.txt");
                 break;
             case PROCESS_STATUS_IDLE:
                 strcpy(existing_filename, "tmp/idle.txt");

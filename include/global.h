@@ -11,8 +11,6 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-#include "lib.h"
-#include "SJF.h"
 
 /**
  * @brief Constantes para as politicas de escalonamento
@@ -22,6 +20,8 @@
 #define SJF 1 // Shortest Job First alias
 #define FCFS 2 // First Come First Served alias
 #define MAX_COMMAND_SIZE 300 // Maximum command size 300 bytes
+#define SERVER "fifo_server" // Name of the server fifo
+#define CLIENT "fifo_client"  // Name of the client fifo
 
 typedef enum ProcessStatus {
     PROCESS_STATUS_ERROR = -1,
@@ -50,9 +50,12 @@ typedef struct process {
     int timePrediction;
 } Process;
 
-#define SERVER "fifo_server"
-#define CLIENT "fifo_client"    
+  
 
 #include "handleFiles.h"
+#include "lib.h"
+#include "SJF.h"
+#include "FCFS.h"
+
 
 #endif

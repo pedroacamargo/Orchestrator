@@ -63,10 +63,6 @@ void execPipe(const char *command, int number_processes) {
         pipe(pipes[i]);
     }
 
-    for (int i = 0; i < number_processes; i++) {
-        printf("Process %d: %s\n", i, processArray[i]); // for debugging
-    }
-
     // Execute processes
     for (int i = 0; i < number_processes; i++) {
         if (fork() == 0) {
@@ -129,29 +125,7 @@ char *space(char *str) {
     *(end + 1) = '\0';
     return str;
 }
-char *retira_new_line(char *str) {
-    char *new = malloc(strlen(str) + 1); 
-    if (new == NULL) {
-        return NULL;
-    }
-    int i;
-    for(i = 0; str[i] != '\n'; i++) {
-        new[i] = str[i];
-    }
-    new[i] = '\0'; 
-    return new;
-}
 
-char* extractTimeProcess(char* command) {
-    char *space = strchr(command, ' ');
-    if (space == NULL) {
-        return NULL;
-    }
-    while (*space == ' ') {
-        space++;
-    }
-    return strdup(space);
-}
 
 void extractProcessPipe(const char *command, int number_processes, char **processArray) {
 
@@ -167,3 +141,39 @@ void extractProcessPipe(const char *command, int number_processes, char **proces
     processArray[index] = NULL;  
 
 }
+
+
+void childProccess(Process process) {
+    printf("CHILD PROCESS FCFS -> Executing (%d): <%s>\n", process.pid, process.command);
+    process.status = PROCESS_STATUS_RUNNING;
+    handleProcess(process);
+
+    int n = checkPipe(process.command);
+    int res;
+
+    gettimeofday(&process.t1, 0);
+    if (n > 1){
+        printf("PIPE DETECTED\n");
+        execPipe(process.command, n); // no futuro deve retrornar um res 
+    }
+    else {
+        res = exec(process.command);
+        if (res == -1) printf("(%d): Error on exec\n", process.pid);
+    } 
+    gettimeofday(&process.t2, 0);
+
+    process.elapsedTime = (process.t2.tv_sec - process.t1.tv_sec) * 1000.0;      // sec to ms
+    process.elapsedTime += (process.t2.tv_usec - process.t1.tv_usec) / 1000.0;   // us to ms
+
+    process.status = PROCESS_STATUS_FINISHED;
+    handleProcess(process);
+
+    _exit(res);
+}
+
+
+
+
+
+
+

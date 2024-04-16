@@ -2,7 +2,6 @@
 #define FCFS_H
 #include "global.h"
 
-void childProccessFCFS(Process process);
-void processCommand(Process process);
+void processCommandFCFS(Process process);
 
 #endif
