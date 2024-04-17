@@ -138,7 +138,6 @@ void extractProcessPipe(const char *command, int number_processes, char **proces
         index++;
         token = strtok(NULL, "|");
     }
-    processArray[index] = NULL;  
 
 }
 
