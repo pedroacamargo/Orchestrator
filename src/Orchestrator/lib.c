@@ -170,9 +170,113 @@ void childProccess(Process process) {
     _exit(res);
 }
 
+// ---------------------------- Child Production ----------------------------
+
+void childProccessProduction(Process *process, int *executingProcesses) {
+    printf("CHILD PROCESS FCFS -> Executing (%d): <%s>\n", process->pid, process->command);
+    process->status = PROCESS_STATUS_RUNNING;
+    *executingProcesses += 1;
+    printProcess(*process);
+
+    int n = checkPipe(process->command);
+    int res;
+
+    gettimeofday(&process->t1, 0);
+    if (n > 1){
+        printf("PIPE DETECTED\n");
+        execPipe(process->command, n); // no futuro deve retrornar um res 
+    }
+    else {
+        res = exec(process->command);
+        if (res == -1) printf("(%d): Error on exec\n", process->pid);
+    } 
+    gettimeofday(&process->t2, 0);
+
+    process->elapsedTime = (process->t2.tv_sec - process->t1.tv_sec) * 1000.0;      // sec to ms
+    process->elapsedTime += (process->t2.tv_usec - process->t1.tv_usec) / 1000.0;   // us to ms
+
+    process->status = PROCESS_STATUS_FINISHED;
+    *executingProcesses -= 1;
+    printProcess(*process);
+
+    _exit(res);
+}
 
 
+Process createNewProcess(Process *processData, int *processesRegistered, char *time, char *comando, int *processDataSize) {
+
+    printf("---> New process created\n");
+    printf("--> Time predicted: %s miliseconds\n", time);
+    printf("-> Command to be executed: %s\n", comando);
 
 
+    Process newProcess = {
+        .pid = *processesRegistered,
+        .status = PROCESS_STATUS_IDLE,
+        .elapsedTime = 0.0f,
+        .timePrediction = atoi(time),
+        .parentPid = 0,
+        .t1 = {0, 0},
+        .t2 = {0, 0}
+    };
+    
+    strcpy(newProcess.command, comando);
 
 
+    addProcessToStatus(newProcess, processData, processDataSize, processesRegistered);
+
+    *processesRegistered += 1;
+    printProcessesData(processData, *processesRegistered);
+
+    printf("Processes registered: %d\n", *processesRegistered);
+
+    return newProcess;
+}
+
+void addProcessToStatus(Process process, Process *processData, int *processDataSize, int *processesRegistered) {
+    if (*processesRegistered == *processDataSize) {
+        *processDataSize *= 2;
+        processData = (Process *)realloc(processData, *processDataSize * sizeof(Process));
+    }
+
+    processData[*processesRegistered] = process;
+    
+    printf("Processes data size: %d\n", *processDataSize);
+}
+
+void printProcessesData(Process *processData, int processesRegistered) {
+    printf("--------------------------\n");
+    for (int i = 0; i < processesRegistered; i++) {
+        printProcess(processData[i]);
+    }
+    printf("--------------------------\n");
+}
+
+void printProcess(Process process) {
+    printf("PID: %d | Status: %d | Command: %s\n", process.pid, process.status, process.command);
+}
+
+void addProcessToIdleQueue(Process process, Process *processIdleQueue, int *processIdleQueueSize, int *idleProcesses) {
+    if (*idleProcesses == *processIdleQueueSize) {
+        *processIdleQueueSize *= 2;
+        processIdleQueue = realloc(processIdleQueue, *processIdleQueueSize * sizeof(Process));
+    }
+
+    processIdleQueue[*idleProcesses] = process;
+    *idleProcesses += 1;
+}
+
+Process getNextProcessIdle(Process *processIdleQueue, int *idleProcesses) {
+    Process newProcess = processIdleQueue[0];
+
+    // Shift all processes in the queue to the left (removing the first one)
+    for (int i = 0; i < *idleProcesses; i++) {
+        processIdleQueue[i] = processIdleQueue[i + 1];
+    }
+
+    // Free the last process in the queue
+    // free(&processIdleQueue[*idleProcesses - 1]);
+    *idleProcesses -= 1;
+
+    return newProcess;
+}

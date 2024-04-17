@@ -1,6 +1,6 @@
 #include "global.h"
 
-void processCommandFCFS(Process process) {
+void processCommandFCFSDebug(Process process) {
 
     handleProcess(process);
 
@@ -51,7 +51,7 @@ void processCommandFCFS(Process process) {
             }
 
             if (child_pid == 0) {
-                processCommandFCFS(newProcess);
+                processCommandFCFSDebug(newProcess);
                 _exit(0);
             }
         }
@@ -60,3 +60,31 @@ void processCommandFCFS(Process process) {
     }
 }
 
+void processCommandFCFSProduction(Process *process, Process *processIdleQueue ,int *idleProcesses, int *executingProcesses) {
+    pid_t pid = fork();
+    if (pid == -1) perror("Error on fork");
+    if (pid == 0) childProccessProduction(process, executingProcesses);
+    else {
+        int status;
+        int terminated_pid = wait(&status);
+        printf("Child process %d terminated with status %d\n", terminated_pid, WEXITSTATUS(status));
+        
+        if (*idleProcesses > 0) {
+            Process newProcess = getNextProcessIdle(processIdleQueue, idleProcesses);
+
+            printf("Command: %s\n", newProcess.command);
+            printf("Time Prediction: %d\n", newProcess.timePrediction);
+
+            int child_pid = fork();
+            if (child_pid == -1) {
+                perror("Error on creating FCFS child process");
+                return;
+            }
+
+            if (child_pid == 0) {
+                processCommandFCFSProduction(&newProcess, processIdleQueue, idleProcesses, executingProcesses);
+                _exit(0);
+            }
+        }
+    }
+}

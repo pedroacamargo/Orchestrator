@@ -2,6 +2,8 @@
 #define FCFS_H
 #include "global.h"
 
-void processCommandFCFS(Process process);
+void processCommandFCFSDebug(Process process);
+
+void processCommandFCFSProduction(Process *process, Process *processIdleQueue ,int *idleProcesses, int *executingProcesses);
 
 #endif

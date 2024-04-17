@@ -50,6 +50,12 @@ typedef struct process {
     int timePrediction;
 } Process;
 
+typedef struct dinamicProcessData {
+    Process *array;
+    int size;
+    int length;
+} DinamicProcessData;
+
   
 
 #include "handleFiles.h"
