@@ -1,10 +1,10 @@
 #include "global.h"
 
 
-void processCommandSJF(Process process) {
+void processCommandSJF(Process process, char* outputFolder) {
     pid_t pid = fork();
     if (pid == -1) perror("Error on fork");
-    if (pid == 0) childProccess(process);
+    if (pid == 0) childProccess(process, outputFolder);
 
     else {
         int status;
@@ -48,7 +48,7 @@ void processCommandSJF(Process process) {
             }
 
             if (child_pid == 0) {
-                processCommandSJF(newProcess);
+                processCommandSJF(newProcess, outputFolder);
                 _exit(0);
             }
         }

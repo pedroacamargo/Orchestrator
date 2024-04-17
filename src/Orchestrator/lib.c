@@ -7,12 +7,39 @@ int checkpolicy(char* policy){
     return INVALID_POLICY;
 }
 
-int exec(const char* command) {
+int exec(Process process, char* outputFolder, int number_processes) {
 
+    if (number_processes < 2) {
+        char outputFolderWithPath[256];
+        sprintf(outputFolderWithPath, "tmp/%s", outputFolder);
+        mkdir(outputFolderWithPath, 0777);
+
+        char outputFileName[256];
+        sprintf(outputFileName, "tmp/%s/%d.txt", outputFolder, process.pid);
+
+        int fd = open(outputFileName, O_WRONLY | O_CREAT, 0644);
+        if (fd == -1) perror("Error opening file");
+
+
+        if (dup2(fd, STDOUT_FILENO) == -1) {
+            perror("Error duplicating file descriptor to stdout");
+            close(fd);
+        
+        }
+
+        if (dup2(fd, STDERR_FILENO) == -1) {
+            perror("Error duplicating file descriptor to stderr");
+            close(fd);
+        
+        }
+
+        close(fd);
+    } 
+   
 	int res = -1, i = 0;
 	char *exec_args[20], *string, *cmd, *tofree;
 
-	tofree = cmd = strdup(command);
+	tofree = cmd = strdup(process.command);
 
 
 	while((string = strsep(&cmd," ")) != NULL){
@@ -52,10 +79,37 @@ int exec(const char* command) {
 	return res;
 }
 
-void execPipe(const char *command, int number_processes) {
+void execPipe(Process process, int number_processes, char* outputFolder) {
+
+    char outputFolderWithPath[256];
+    sprintf(outputFolderWithPath, "tmp/%s", outputFolder);
+    mkdir(outputFolderWithPath, 0777);
+
+    char outputFileName[256];
+    sprintf(outputFileName, "tmp/%s/%d.txt", outputFolder, process.pid);
+
+    int fd = open(outputFileName, O_WRONLY | O_CREAT, 0644);
+    if (fd == -1) perror("Error opening file");
+
+
+    if (dup2(fd, STDOUT_FILENO) == -1) {
+        perror("Error duplicating file descriptor to stdout");
+        close(fd);
+    
+    }
+
+    if (dup2(fd, STDERR_FILENO) == -1) {
+        perror("Error duplicating file descriptor to stderr");
+        close(fd);
+    
+    }
+
+    close(fd);
+
     char **processArray = malloc((number_processes) * sizeof(char*));
 
-    extractProcessPipe(command, number_processes, processArray);
+    extractProcessPipe(process.command, number_processes, processArray);
+
 
     // Create pipes
     int pipes[number_processes - 1][2];
@@ -82,7 +136,11 @@ void execPipe(const char *command, int number_processes) {
                 close(pipes[j][1]);
             }
 
-            exec(processArray[i]);
+            Process newProcess;
+            newProcess.pid = process.pid;
+            strcpy(newProcess.command, processArray[i]);
+
+            exec(newProcess, outputFolder, number_processes);
             _exit(EXIT_FAILURE);
         }
     }
@@ -102,7 +160,7 @@ void execPipe(const char *command, int number_processes) {
     for (int i = 0; i < number_processes; i++) {
         free(processArray[i]);
     }
-}
+} 
 
 int checkPipe(const char *command){
     int count = 0;
@@ -142,7 +200,7 @@ void extractProcessPipe(const char *command, int number_processes, char **proces
 }
 
 
-void childProccess(Process process) {
+void childProccess(Process process, char* outputFolder) {
     printf("CHILD PROCESS FCFS -> Executing (%d): <%s>\n", process.pid, process.command);
     process.status = PROCESS_STATUS_RUNNING;
     handleProcess(process);
@@ -153,10 +211,10 @@ void childProccess(Process process) {
     gettimeofday(&process.t1, 0);
     if (n > 1){
         printf("PIPE DETECTED\n");
-        execPipe(process.command, n); // no futuro deve retrornar um res 
+        execPipe(process, n, outputFolder); // no futuro deve retrornar um res 
     }
     else {
-        res = exec(process.command);
+        res = exec(process, outputFolder,n);
         if (res == -1) printf("(%d): Error on exec\n", process.pid);
     } 
     gettimeofday(&process.t2, 0);
@@ -169,10 +227,4 @@ void childProccess(Process process) {
 
     _exit(res);
 }
-
-
-
-
-
-
 

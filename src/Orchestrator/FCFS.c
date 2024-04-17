@@ -1,12 +1,12 @@
 #include "global.h"
 
-void processCommandFCFS(Process process) {
+void processCommandFCFS(Process process, char* outputFolder) {
 
     handleProcess(process);
 
     pid_t pid = fork();
     if (pid == -1) perror("Error on fork");
-    if (pid == 0) childProccess(process);
+    if (pid == 0) childProccess(process, outputFolder);
     else {
         int status;
         int terminated_pid = wait(&status);
@@ -51,7 +51,7 @@ void processCommandFCFS(Process process) {
             }
 
             if (child_pid == 0) {
-                processCommandFCFS(newProcess);
+                processCommandFCFS(newProcess, outputFolder);
                 _exit(0);
             }
         }

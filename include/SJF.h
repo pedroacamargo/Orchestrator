@@ -2,6 +2,6 @@
 #define SJF_H
 #include "global.h"
 
-void processCommandSJF(Process process);
+void processCommandSJF(Process process,char* outputFolder);
 
 #endif

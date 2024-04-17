@@ -14,14 +14,13 @@ int checkpolicy(char* policy);
  * -1 if there was an error
  * res if the command was executed successfully
 */
-int exec(const char* command);
-
+int exec(Process process, char* outputFolder, int number_processes);
 /**
  * @brief Execute a command/pipe with fork
  * @param command The command to be executed and @param number_processes 
  * @returns no futuro devera ser igual ao exec
 */
-void execPipe(const char* command, int number_processes);
+void execPipe(Process process, int number_processes, char* outputFolder);
 
 /**
  * @brief Check if the command is a pipe
@@ -49,5 +48,5 @@ void extractProcessPipe(const char *command, int number_processes, char **proces
  * @brief Execute a command with fork
  * @param command The command to be executed
 */
-void childProccess(Process process);
+void childProccess(Process process, char* outputFolder);
 #endif
