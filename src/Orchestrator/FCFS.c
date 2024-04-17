@@ -11,7 +11,7 @@ void processCommandFCFS(Process process) {
         int status;
         int terminated_pid = wait(&status);
         printf("Child process %d terminated with status %d\n", terminated_pid, WEXITSTATUS(status));
-        process.status = PROCESS_STATUS_FINISHED;
+        
 
         int fdIdle = open("tmp/idle.txt", O_RDONLY, 0644);
         int idle = countLines("tmp/idle.txt");
