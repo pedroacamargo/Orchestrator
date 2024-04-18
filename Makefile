@@ -32,7 +32,7 @@ obj/Client/%.o: src/Client/%.c
 clean: 
 	find obj/ -type f -delete
 	find obj/ -type d -empty -delete
-	rm -f tmp/* client orchestrator fifo_client fifo_server
+	rm -rf tmp/ client orchestrator fifo_client fifo_server 
 
 
 

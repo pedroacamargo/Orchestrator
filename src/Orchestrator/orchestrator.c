@@ -97,8 +97,8 @@ int main(int argc, char *argv[]){
                     }
 
                 if (child_pid == 0){
-                    if (checkpolicy(argv[3]) == SJF) processCommandSJF(newProcess);
-                    else if( checkpolicy(argv[3]) == FCFS) processCommandFCFS(newProcess);
+                    if (checkpolicy(argv[3]) == SJF) processCommandSJF(newProcess, argv[1]);
+                    else if( checkpolicy(argv[3]) == FCFS) processCommandFCFS(newProcess, argv[1]);
                     _exit(0);
                 }
 
