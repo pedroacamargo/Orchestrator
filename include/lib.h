@@ -61,8 +61,7 @@ void childProccessProduction(Process *process, int *executingProcesses);
  * @param comando The command to be executed
  * @returns a new process
 */
-Process createNewProcess(Process *processData, int *commandsWritten, char *time, char *comando, int *processDataSize);
-
+Process createNewProcess(int processesRegistered, char *time, char *comando);
 
 /**
  * @brief Add a process to the status
@@ -71,7 +70,7 @@ Process createNewProcess(Process *processData, int *commandsWritten, char *time,
  * @param processDataSize The size of the array
  * @param processesRegistered The number of processes registered
 */
-void addProcessToStatus(Process process, Process *processData, int *processDataSize, int *processesRegistered);
+void addProcessToStatus(Process process, Process **processData,int *processesRegistered);
 
 
 /**
@@ -80,7 +79,6 @@ void addProcessToStatus(Process process, Process *processData, int *processDataS
  * @param processesRegistered The number of processes registered
 */
 void printProcessesData(Process *processData, int processesRegistered);
-
 
 /**
  * @brief Print a process

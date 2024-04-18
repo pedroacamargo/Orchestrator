@@ -50,6 +50,7 @@ int main(int argc, char *argv[]){
         char buffer[256];
         ssize_t bytes_read;
         int processesRegistered = 0;
+        int id = 1;
 
         // ------------------------------------ DEBUG MODE ------------------------------------
 
@@ -134,7 +135,7 @@ int main(int argc, char *argv[]){
             // dinamicProcessesData->length = 0;
             // dinamicProcessesData->array = (Process *)malloc(sizeof(Process) * dinamicProcessesData->size);
 
-            int processesDataSize = 1;
+            int processesDataSize = 0;
             int idleProcessesQueueSize = 1;
             Process *processesData = (Process *)malloc(sizeof(Process) * processesDataSize); // Array to store all the processes in the current session
             Process *processIdleQueue = (Process *)malloc(sizeof(Process) * idleProcessesQueueSize); // Queue to store the processes that are idle
@@ -169,7 +170,11 @@ int main(int argc, char *argv[]){
                     char *comando = strtok(NULL, "\0");
                     
 
-                    Process newProcess = createNewProcess(processesData, &processesRegistered, time, comando, &processesDataSize);
+                    Process newProcess = createNewProcess(id, time, comando);
+                    id++;
+                   
+                    addProcessToStatus(newProcess, &processesData ,&processesDataSize);
+                    printProcessesData(processesData, processesDataSize);
 
                     memset(buffer, 0, sizeof(buffer));
                     sprintf(buffer, "TASK %d Received", newProcess.pid);

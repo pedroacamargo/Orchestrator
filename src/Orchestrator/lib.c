@@ -203,7 +203,7 @@ void childProccessProduction(Process *process, int *executingProcesses) {
 }
 
 
-Process createNewProcess(Process *processData, int *processesRegistered, char *time, char *comando, int *processDataSize) {
+Process createNewProcess(int id, char *time, char *comando) {
 
     printf("---> New process created\n");
     printf("--> Time predicted: %s miliseconds\n", time);
@@ -211,7 +211,7 @@ Process createNewProcess(Process *processData, int *processesRegistered, char *t
 
 
     Process newProcess = {
-        .pid = *processesRegistered,
+        .pid = id,
         .status = PROCESS_STATUS_IDLE,
         .elapsedTime = 0.0f,
         .timePrediction = atoi(time),
@@ -221,28 +221,20 @@ Process createNewProcess(Process *processData, int *processesRegistered, char *t
     };
     
     strcpy(newProcess.command, comando);
-
-
-    addProcessToStatus(newProcess, processData, processDataSize, processesRegistered);
-
-    *processesRegistered += 1;
-    printProcessesData(processData, *processesRegistered);
-
-    printf("Processes registered: %d\n", *processesRegistered);
-
     return newProcess;
 }
 
-void addProcessToStatus(Process process, Process *processData, int *processDataSize, int *processesRegistered) {
-    if (*processesRegistered == *processDataSize) {
-        *processDataSize *= 2;
-        processData = (Process *)realloc(processData, *processDataSize * sizeof(Process));
-    }
 
-    processData[*processesRegistered] = process;
-    
-    printf("Processes data size: %d\n", *processDataSize);
-}
+
+ void addProcessToStatus(Process process, Process **processData,int *processesRegistered) {
+
+    *processesRegistered += 1;
+
+    *processData = realloc(*processData, *processesRegistered * sizeof(Process));
+    (*processData)[*processesRegistered - 1] = process;
+
+
+} 
 
 void printProcessesData(Process *processData, int processesRegistered) {
     printf("--------------------------\n");
@@ -251,6 +243,13 @@ void printProcessesData(Process *processData, int processesRegistered) {
     }
     printf("--------------------------\n");
 }
+
+
+
+
+
+
+
 
 void printProcess(Process process) {
     printf("PID: %d | Status: %d | Command: %s\n", process.pid, process.status, process.command);
