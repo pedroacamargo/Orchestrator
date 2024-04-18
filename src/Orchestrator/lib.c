@@ -175,8 +175,8 @@ void childProccess(Process process) {
 void childProccessProduction(Process *process, int *executingProcesses) {
     printf("CHILD PROCESS FCFS -> Executing (%d): <%s>\n", process->pid, process->command);
     process->status = PROCESS_STATUS_RUNNING;
-    *executingProcesses += 1;
-    printProcess(*process);
+    // printProcess(*process);
+    // printf("Executing Processes from child: %d\n", *executingProcesses);
 
     int n = checkPipe(process->command);
     int res;
@@ -196,8 +196,7 @@ void childProccessProduction(Process *process, int *executingProcesses) {
     process->elapsedTime += (process->t2.tv_usec - process->t1.tv_usec) / 1000.0;   // us to ms
 
     process->status = PROCESS_STATUS_FINISHED;
-    *executingProcesses -= 1;
-    printProcess(*process);
+    // printProcess(*process);
 
     _exit(res);
 }
@@ -225,17 +224,6 @@ Process createNewProcess(int id, char *time, char *comando) {
 }
 
 
-
- void addProcessToStatus(Process process, Process **processData,int *processesRegistered) {
-
-    *processesRegistered += 1;
-
-    *processData = realloc(*processData, *processesRegistered * sizeof(Process));
-    (*processData)[*processesRegistered - 1] = process;
-
-
-} 
-
 void printProcessesData(Process *processData, int processesRegistered) {
     printf("--------------------------\n");
     for (int i = 0; i < processesRegistered; i++) {
@@ -245,24 +233,25 @@ void printProcessesData(Process *processData, int processesRegistered) {
 }
 
 
-
-
-
-
-
-
 void printProcess(Process process) {
     printf("PID: %d | Status: %d | Command: %s\n", process.pid, process.status, process.command);
 }
 
-void addProcessToIdleQueue(Process process, Process *processIdleQueue, int *processIdleQueueSize, int *idleProcesses) {
-    if (*idleProcesses == *processIdleQueueSize) {
-        *processIdleQueueSize *= 2;
-        processIdleQueue = realloc(processIdleQueue, *processIdleQueueSize * sizeof(Process));
-    }
 
-    processIdleQueue[*idleProcesses] = process;
+void addProcessToStatus(Process process, Process **processData,int *processesRegistered) {
+    *processesRegistered += 1;
+
+    *processData = realloc(*processData, *processesRegistered * sizeof(Process));
+    (*processData)[*processesRegistered - 1] = process;
+} 
+
+void addProcessToIdleQueue(Process process, Process **processIdleQueue, int *processIdleQueueSize, int *idleProcesses) {
+
     *idleProcesses += 1;
+
+    *processIdleQueue = realloc(*processIdleQueue, *idleProcesses * sizeof(Process));
+    (*processIdleQueue)[*idleProcesses - 1] = process;
+
 }
 
 Process getNextProcessIdle(Process *processIdleQueue, int *idleProcesses) {

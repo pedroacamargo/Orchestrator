@@ -94,8 +94,7 @@ void printProcess(Process process);
  * @param processIdleQueueSize The size of the array
  * @param idleProcesses The number of idle processes
 */
-void addProcessToIdleQueue(Process process, Process *processIdleQueue, int *processIdleQueueSize, int *idleProcesses);
-
+void addProcessToIdleQueue(Process process, Process **processIdleQueue, int *processIdleQueueSize, int *idleProcesses);
 
 /**
  * @brief Get the next process that is idle

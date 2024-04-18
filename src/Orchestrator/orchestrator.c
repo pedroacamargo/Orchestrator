@@ -50,7 +50,6 @@ int main(int argc, char *argv[]){
         char buffer[256];
         ssize_t bytes_read;
         int processesRegistered = 0;
-        int id = 1;
 
         // ------------------------------------ DEBUG MODE ------------------------------------
 
@@ -74,6 +73,7 @@ int main(int argc, char *argv[]){
                 Process newProcess;
                 memset(&newProcess, 0, sizeof(Process));
                 printf("Waiting for new process...\n");
+
 
                 if ((bytes_read = read(fd, buffer, sizeof(buffer))) > 0){
 
@@ -139,14 +139,15 @@ int main(int argc, char *argv[]){
             int idleProcessesQueueSize = 1;
             Process *processesData = (Process *)malloc(sizeof(Process) * processesDataSize); // Array to store all the processes in the current session
             Process *processIdleQueue = (Process *)malloc(sizeof(Process) * idleProcessesQueueSize); // Queue to store the processes that are idle
-            // Process *processExecutionQueue = malloc(sizeof(Process) * atoi(argv[2])); // Queue to store the processes that are being executed
+            // Process *processExecutionQueue = (Process *)malloc(sizeof(Process) * atoi(argv[2])); // Queue to store the processes that are being executed
 
             int idleProcesses = 0;
             int executingProcesses = 0;
+            // int paralelTasks = atoi(argv[2]);
 
             // ------------------ PRODUCTION MODE ------------------
-            while (1){
 
+            while (1) {
                 int fd = open(SERVER, O_RDONLY);
                 if (fd == -1){
                     perror("Open fifo server");
@@ -159,23 +160,55 @@ int main(int argc, char *argv[]){
                     _exit(1);
                 }
 
-                printf("Waiting for new process...\n");
-
                 memset(buffer, 0, sizeof(buffer));
 
-                // get a new process
+                while (executingProcesses < atoi(argv[2]) && idleProcesses == 0) {
+
+                    // get a new process
+                    if ((bytes_read = read(fd, buffer, sizeof(buffer))) > 0){
+                        buffer[bytes_read] = '\0';
+                        char *time = strtok(buffer, "-");
+                        char *comando = strtok(NULL, "\0");
+                        
+
+                        Process newProcess = createNewProcess(processesRegistered, time, comando);
+                        processesRegistered++;
+                        addProcessToStatus(newProcess, &processesData ,&processesDataSize);
+                    
+                        memset(buffer, 0, sizeof(buffer));
+                        sprintf(buffer, "TASK %d Received", newProcess.pid);
+
+                        if (write(fd_client, buffer, strlen(buffer)) == -1){
+                            perror("write");
+                            _exit(1);
+                        }
+                        memset(buffer, 0, sizeof(buffer));
+                    }
+
+
+                    // If there's space in the queue, add the process to the queue
+                    executingProcesses++;
+
+                    int child_pid = fork();
+                    if (child_pid == -1) perror("Error on creating FCFS child process");
+                    else if (child_pid == 0){                        
+                        processCommandFCFSProduction(&processesData[processesRegistered - 1], processIdleQueue, &idleProcesses, &executingProcesses);
+                        executingProcesses--;
+                        processesData[processesRegistered - 1].status = PROCESS_STATUS_FINISHED;
+                        _exit(0);
+                    }
+                }
+
                 if ((bytes_read = read(fd, buffer, sizeof(buffer))) > 0){
                     buffer[bytes_read] = '\0';
                     char *time = strtok(buffer, "-");
                     char *comando = strtok(NULL, "\0");
                     
 
-                    Process newProcess = createNewProcess(id, time, comando);
-                    id++;
-                   
+                    Process newProcess = createNewProcess(processesRegistered, time, comando);
+                    processesRegistered++;
                     addProcessToStatus(newProcess, &processesData ,&processesDataSize);
-                    printProcessesData(processesData, processesDataSize);
-
+                
                     memset(buffer, 0, sizeof(buffer));
                     sprintf(buffer, "TASK %d Received", newProcess.pid);
 
@@ -184,31 +217,13 @@ int main(int argc, char *argv[]){
                         _exit(1);
                     }
                     memset(buffer, 0, sizeof(buffer));
-                }
-                continue; // TODO: tirar isso dps de consertar o codigo de cima
 
-                // printProcessesData(processesData, processesRegistered);
-
-                printf("Idle processes: %d\n", idleProcesses);
-                printProcessesData(processIdleQueue, idleProcesses);
-
-                if (executingProcesses < atoi(argv[2]) && idleProcesses == 0){
-                    // If there's space in the queue, add the process to the queue
-
-                    int child_pid = fork();
-                    if (child_pid == -1){
-                        perror("Error on creating FCFS child process");
-                    }
-
-                    if (child_pid == 0){
-                        if (checkpolicy(argv[3]) == SJF) processCommandFCFSProduction(&processesData[processesRegistered - 1], processIdleQueue, &idleProcesses, &executingProcesses);
-                        else if( checkpolicy(argv[3]) == FCFS) processCommandFCFSProduction(&processesData[processesRegistered - 1], processIdleQueue, &idleProcesses, &executingProcesses);
-                        _exit(0);
-                    }
-                } else {
                     // Add the process to the idle queue
-                    addProcessToIdleQueue(processesData[processesRegistered], processIdleQueue, &idleProcessesQueueSize, &idleProcesses);
+                    addProcessToIdleQueue(processesData[processesRegistered - 1], &processIdleQueue, &idleProcessesQueueSize, &idleProcesses);
                 }
+
+                printf("All processes: %d\n", idleProcesses);
+                printProcessesData(processesData, processesRegistered);
 
                 memset(buffer, 0, sizeof(buffer));
                 close(fd_client);
