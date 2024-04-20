@@ -59,4 +59,3 @@ void processCommandFCFS(Process process, char* outputFolder) {
         close(fdIdle);
     }
 }
-

@@ -228,3 +228,23 @@ void childProccess(Process process, char* outputFolder) {
     _exit(res);
 }
 
+void print_file_contents(const char* filename) {
+    int fd = open(filename, O_RDONLY);
+    if (fd == -1) {
+        perror("open");
+        return;
+    }
+
+    char buffer[MAX_COMMAND_SIZE];
+    ssize_t bytes_read;
+    while ((bytes_read = read(fd, buffer, sizeof(buffer) - 1)) > 0) {
+        buffer[bytes_read] = '\0';
+        write(STDOUT_FILENO, buffer, bytes_read);
+    }
+
+    if (bytes_read == -1) {
+        perror("read");
+    }
+
+    close(fd);
+}

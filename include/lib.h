@@ -49,4 +49,11 @@ void extractProcessPipe(const char *command, int number_processes, char **proces
  * @param command The command to be executed
 */
 void childProccess(Process process, char* outputFolder);
+
+/**
+ * @brief Print the contents of a file
+ * @param filename The name of the file to be printed
+*/
+void print_file_contents(const char* filename);
+
 #endif

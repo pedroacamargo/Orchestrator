@@ -56,5 +56,3 @@ void processCommandSJF(Process process, char* outputFolder) {
     }
  
 }
-
-
