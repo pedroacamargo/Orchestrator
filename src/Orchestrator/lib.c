@@ -143,10 +143,9 @@ void extractProcessPipe(const char *command, int number_processes, char **proces
 
 
 void childProccess(Process process) {
-    printf("CHILD PROCESS FCFS -> Executing (%d): <%s>\n", process.pid, process.command);
-    process.status = PROCESS_STATUS_RUNNING;
-    handleProcess(process);
 
+    printf("CHILD PROCESS FCFS -> Executing (%d): <%s>\n", process.id, process.command);
+    /*
     int n = checkPipe(process.command);
     int res;
 
@@ -167,61 +166,30 @@ void childProccess(Process process) {
     process.status = PROCESS_STATUS_FINISHED;
     handleProcess(process);
 
-    _exit(res);
+    _exit(res); */
+    exec(process.command);
+    printf("CHILD PROCESS FCFS -> Executing (%d): <%s>\n", process.id, process.command);
+    _exit(0);
 }
 
 // ---------------------------- Child Production ----------------------------
 
-void childProccessProduction(Process *process, int *executingProcesses) {
-    printf("CHILD PROCESS FCFS -> Executing (%d): <%s>\n", process->pid, process->command);
-    process->status = PROCESS_STATUS_RUNNING;
-    // printProcess(*process);
-    // printf("Executing Processes from child: %d\n", *executingProcesses);
 
-    int n = checkPipe(process->command);
-    int res;
-
-    gettimeofday(&process->t1, 0);
-    if (n > 1){
-        printf("PIPE DETECTED\n");
-        execPipe(process->command, n); // no futuro deve retrornar um res 
-    }
-    else {
-        res = exec(process->command);
-        if (res == -1) printf("(%d): Error on exec\n", process->pid);
-    } 
-    gettimeofday(&process->t2, 0);
-
-    process->elapsedTime = (process->t2.tv_sec - process->t1.tv_sec) * 1000.0;      // sec to ms
-    process->elapsedTime += (process->t2.tv_usec - process->t1.tv_usec) / 1000.0;   // us to ms
-
-    process->status = PROCESS_STATUS_FINISHED;
-    // printProcess(*process);
-
-    _exit(res);
-}
-
-
-Process createNewProcess(int id, char *time, char *comando) {
-
-    printf("---> New process created\n");
-    printf("--> Time predicted: %s miliseconds\n", time);
-    printf("-> Command to be executed: %s\n", comando);
-
+/* Process createNewProcess(int id, char *time, char *comando) {
 
     Process newProcess = {
         .pid = id,
         .status = PROCESS_STATUS_IDLE,
         .elapsedTime = 0.0f,
         .timePrediction = atoi(time),
-        .parentPid = 0,
         .t1 = {0, 0},
-        .t2 = {0, 0}
+        .t2 = {0, 0},
+        .id = 0
     };
     
     strcpy(newProcess.command, comando);
     return newProcess;
-}
+} */
 
 
 void printProcessesData(Process *processData, int processesRegistered) {
@@ -234,7 +202,7 @@ void printProcessesData(Process *processData, int processesRegistered) {
 
 
 void printProcess(Process process) {
-    printf("PID: %d | Status: %d | Command: %s\n", process.pid, process.status, process.command);
+    printf("ID: %d | Status: %d | Command: %s | PID: %d\n", process.id, process.status, process.command, process.pid);
 }
 
 
@@ -245,26 +213,100 @@ void addProcessToStatus(Process process, Process **processData,int *processesReg
     (*processData)[*processesRegistered - 1] = process;
 } 
 
-void addProcessToIdleQueue(Process process, Process **processIdleQueue, int *processIdleQueueSize, int *idleProcesses) {
+/// heaps a entrar em acao 
 
-    *idleProcesses += 1;
 
-    *processIdleQueue = realloc(*processIdleQueue, *idleProcesses * sizeof(Process));
-    (*processIdleQueue)[*idleProcesses - 1] = process;
 
+int parent(int i) {
+    return (i - 1) / 2;
 }
 
-Process getNextProcessIdle(Process *processIdleQueue, int *idleProcesses) {
-    Process newProcess = processIdleQueue[0];
+int left_child(int i) {
+    return (2*i + 1);
+}
 
-    // Shift all processes in the queue to the left (removing the first one)
-    for (int i = 0; i < *idleProcesses; i++) {
-        processIdleQueue[i] = processIdleQueue[i + 1];
+int right_child(int i) {
+    return (2*i + 2);
+}
+
+Process get_min(MinHeap* heap) {
+    return heap->arr[0];
+}
+
+
+MinHeap* init_minheap(int capacity) {
+    MinHeap* minheap = (MinHeap*)malloc(sizeof(MinHeap));
+    minheap->arr = (Process*)malloc(capacity * sizeof(Process));
+    minheap->capacity = capacity;
+    minheap->size = 0;
+    return minheap;
+}
+
+
+void resize_heap(MinHeap* heap) {
+    heap->capacity *= 2;
+    heap->arr = (Process*)realloc(heap->arr, heap->capacity * sizeof(Process));
+}
+
+
+
+MinHeap* insert_minheap(MinHeap* heap, Process element) {
+    if (heap->size == heap->capacity) {
+        resize_heap(heap);
     }
+    heap->size++;
+    int i = heap->size - 1;
+    while (i && element.timePrediction < heap->arr[parent(i)].timePrediction) {
+        heap->arr[i] = heap->arr[parent(i)];
+        i = parent(i);
+    }
+    heap->arr[i] = element;
+    return heap;
+}
 
-    // Free the last process in the queue
-    // free(&processIdleQueue[*idleProcesses - 1]);
-    *idleProcesses -= 1;
 
-    return newProcess;
+MinHeap* heapify(MinHeap* heap, int index) {
+    int smallest = index;
+    int left = left_child(index);
+    int right = right_child(index);
+    
+    if (left < heap->size && heap->arr[left].timePrediction < heap->arr[index].timePrediction)
+        smallest = left;
+    if (right < heap->size && heap->arr[right].timePrediction < heap->arr[smallest].timePrediction)
+        smallest = right;
+    if (smallest != index) {
+        Process temp = heap->arr[index];
+        heap->arr[index] = heap->arr[smallest];
+        heap->arr[smallest] = temp;
+        heap = heapify(heap, smallest);
+    }
+    return heap;
+}
+
+
+MinHeap* delete_minimum(MinHeap* heap) {
+    if (!heap || heap->size == 0)
+        return heap;
+    heap->arr[0] = heap->arr[heap->size - 1];
+    heap->size--;
+    heap = heapify(heap, 0);
+    return heap;
+}
+
+
+void print_heap(MinHeap* heap) {
+    printf("Min Heap:\n");
+    for (int i = 0; i < heap->size; i++) {
+        printf("pid: %d, timePrediction: %d -> ", heap->arr[i].pid, heap->arr[i].timePrediction);
+    }
+    printf("\n");
+}
+
+
+
+void free_minheap(MinHeap* heap) {
+    if (!heap)
+        return;
+    free(heap->arr);
+    free(heap);
 }

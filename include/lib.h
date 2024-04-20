@@ -50,8 +50,6 @@ void extractProcessPipe(const char *command, int number_processes, char **proces
  * @param command The command to be executed
 */
 void childProccess(Process process);
-void childProccessProduction(Process *process, int *executingProcesses);
-
 
 /**
  * @brief Create a new process
@@ -86,22 +84,21 @@ void printProcessesData(Process *processData, int processesRegistered);
 */
 void printProcess(Process process);
 
+/// heaps a entrar em açao
 
-/**
- * @brief Add a process to the idle queue
- * @param process The process to be added
- * @param processIdleQueue The array of idle processes
- * @param processIdleQueueSize The size of the array
- * @param idleProcesses The number of idle processes
-*/
-void addProcessToIdleQueue(Process process, Process **processIdleQueue, int *processIdleQueueSize, int *idleProcesses);
+int parent(int i);
+int left_child(int i);
+int right_child(int i);
+Process get_min(MinHeap* heap);
+MinHeap* init_minheap(int capacity);
+void resize_heap(MinHeap* heap);
+MinHeap* insert_minheap(MinHeap* heap, Process element);
+MinHeap* heapify(MinHeap* heap, int index);
+MinHeap* delete_minimum(MinHeap* heap);
+void print_heap(MinHeap* heap);
+void free_minheap(MinHeap* heap) ;
 
-/**
- * @brief Get the next process that is idle
- * @param processData The array of processes
- * @param processesRegistered The number of processes registered
- * @returns the next process that is idle
-*/
-Process getNextProcessIdle(Process *processIdleQueue, int *idleProcesses);
+
+
 
 #endif

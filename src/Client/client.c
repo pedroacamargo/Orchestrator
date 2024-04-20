@@ -2,30 +2,35 @@
 
 int main(int argc, char *argv[]) {
 
-    int fifo_client = mkfifo(CLIENT, 0666);
+	int fifo_client = mkfifo(CLIENT, 0666);
 	if (fifo_client == -1) {
 		perror("mkfifo");
 		_exit(1);
 	}
 
-    int fd = open(SERVER, O_WRONLY);
+    Process newProcess = {
+        .pid = 0,
+        .status = PROCESS_STATUS_IDLE,
+        .elapsedTime = 0.0f,
+        .t1 = {0, 0},
+        .t2 = {0, 0},
+        .timePrediction = atoi(argv[2]),
+        .id = 0,
+    };
+	strcpy(newProcess.command, argv[4]);
+	strcpy(newProcess.pipe, argv[3]);
+
+	int fd = open(SERVER, O_WRONLY);
 	if (fd == -1) {
 		perror("open");
 		_exit(1);
 	}
 
-
-    char BUFFER[256];
-    memset(BUFFER, 0, sizeof(BUFFER));
-    snprintf(BUFFER, sizeof(BUFFER), "%s-%s", argv[2], argv[4]);
-
-    if (write(fd, BUFFER, sizeof(BUFFER)) == -1) {
+	if (write(fd, &newProcess, sizeof(Process)) == -1) {
 		perror("write");
 		_exit(1);
 	}
-    close(fd);
-	memset(BUFFER, 0, sizeof(BUFFER));
-
+	close(fd);
 
     int fd_client = open(CLIENT, O_RDONLY);
 	if (fd_client == -1) {
@@ -33,17 +38,17 @@ int main(int argc, char *argv[]) {
 		_exit(1);
 	}
 
+    char buffer[256];
+    // Aguardando resposta do servidor
+    if (read(fd_client, buffer, sizeof(buffer)) == -1) {
+        perror("read");
+        _exit(1);
+    }
+    close(fd_client);
 
-	if (read(fd_client, BUFFER, sizeof(BUFFER)) == -1) {
-    	perror("read");
-    	_exit(1);
-	}
-
-	strcat(BUFFER, "\n");
-	write(STDOUT_FILENO, BUFFER, strlen(BUFFER));
-	memset(BUFFER, 0, sizeof(BUFFER));
-	close(fd_client);
-	unlink(CLIENT);
+    strcat(buffer, "\n");
+    write(STDOUT_FILENO, buffer, strlen(buffer));
+	memset(buffer, 0, sizeof(buffer));
+    unlink(CLIENT);
     return 0;
 }
-

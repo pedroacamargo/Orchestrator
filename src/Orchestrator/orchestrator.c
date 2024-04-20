@@ -1,243 +1,130 @@
 #include "global.h"
 
-#define DEBUG_MODE 1
-#define PRODUCTION_MODE 0
-
-// change the mode here to switch between debug and production
-#define CURRENT_MODE PRODUCTION_MODE
-
-
-int main(int argc, char *argv[]){
-    
-
-    if (argc < 4){
+int main(int argc, char *argv[]) {
+    if (argc < 4) {
         printf("Usage: %s <output-folder> <parallel-tasks> <sched-policy>\n", argv[0]);
         return 1;
     }
 
+    int fdCompleted = open("tmp/completed.txt", O_CREAT | O_WRONLY | O_APPEND, 0666);
+    if (fdCompleted == -1) {
+        perror("Open completed.txt");
+        return 1;
+    } 
+
+    // Criando o FIFO do servidor
     int fd = mkfifo(SERVER, 0666);
-    if (fd == -1){
+    if (fd == -1) {
         perror("Open fifo server");
         _exit(1);
     }
 
-    int fdIdle = open("tmp/idle.txt", O_CREAT | O_RDONLY, 0666);
-    if (fdIdle == -1){
-        perror("Open ide.txt");
-        return 1;
-    }
-
-    int fdExecuting = open("tmp/executing.txt", O_CREAT | O_RDONLY, 0666);
-    if (fdExecuting == -1){
-        perror("Open executing.txt");
-        return 1;
-    }
-
-    int fdCompleted = open("tmp/completed.txt", O_CREAT | O_RDONLY, 0666);
-    if (fdCompleted == -1){
-        perror("Open completed.txt");
-        return 1;
-    }
-
-
-
-    if (checkpolicy(argv[3]) == INVALID_POLICY){
+    // Verificando a política
+    if (checkpolicy(argv[3]) == INVALID_POLICY) {
         printf("Invalid policy, server suspended!\n");
         return 1;
-    } else { // valid policy
-
-
+    } else {
         char buffer[256];
-        ssize_t bytes_read;
-        int processesRegistered = 0;
+        int id = 1;
+        int executingProcesses = 0;
+        int idleProcesses = 0;
+        Process newProcess;
 
-        // ------------------------------------ DEBUG MODE ------------------------------------
+        printf("Orchestrator started!\n");
 
-        if (CURRENT_MODE == DEBUG_MODE){
-            printf("Orchestrator started in debug mode!\n");
+        int ArrayDataSize = 0;
+        Process *ArrayData = (Process *) malloc(sizeof(Process) * ArrayDataSize);
+        MinHeap *heap = init_minheap(10);
 
-            while (1){
-
-                int fd = open(SERVER, O_RDONLY);
-                if (fd == -1){
-                    perror("Open fifo server");
-                    _exit(1);
-                }
-
-                int fd_client = open(CLIENT, O_WRONLY);
-                if (fd_client == -1){
-                    perror("Open fifo client");
-                    _exit(1);
-                }
-
-                Process newProcess;
-                memset(&newProcess, 0, sizeof(Process));
-                printf("Waiting for new process...\n");
-
-
-                if ((bytes_read = read(fd, buffer, sizeof(buffer))) > 0){
-
-                    buffer[bytes_read] = '\0';
-                    char *first_string = strtok(buffer, "-");
-                    char *second_string = strtok(NULL, "\0");
-                    printf("---> New process received\n");
-                    printf("--> Time predicted: %s miliseconds\n", first_string);
-                    printf("-> Command to be executed: %s\n", second_string);
-
-                    newProcess.pid = processesRegistered;
-                    strcpy(newProcess.command, second_string);
-                    newProcess.timePrediction = atoi(first_string);
-                    memset(buffer, 0, sizeof(buffer));
-
-                    sprintf(buffer, "TASK %d Received", newProcess.pid);
-
-                    if (write(fd_client, buffer, strlen(buffer)) == -1){
-                        perror("write");
-                        _exit(1);
-                    }
-                    memset(buffer, 0, sizeof(buffer));
-                }
-
-                if (countLines("tmp/executing.txt") < atoi(argv[2]) && countLines("tmp/idle.txt") == 0){
-
-                    int child_pid = fork();
-
-                    if (child_pid == -1){
-                        perror("Error on creating FCFS child process");
-                        }
-
-                    if (child_pid == 0){
-                        if (checkpolicy(argv[3]) == SJF) processCommandSJF(newProcess);
-                        else if( checkpolicy(argv[3]) == FCFS) processCommandFCFSDebug(newProcess);
-                        _exit(0);
-                    }
-
-                    processesRegistered++;
-                
-                }
-                else {
-                    newProcess.status = PROCESS_STATUS_IDLE;
-                    handleProcess(newProcess);
-                    processesRegistered++;
-                }
-
-                memset(buffer, 0, sizeof(buffer));
-                close(fd_client);
-                close(fd);
+        while (1) {
+            int fd_server = open(SERVER, O_RDONLY);
+            if (fd_server == -1) {
+                perror("open");
+                _exit(1);
             }
 
-        } else if (CURRENT_MODE == PRODUCTION_MODE) {
-            printf("Orchestrator started in production mode!\n");
+            if (read(fd_server, &newProcess, sizeof(Process)) == -1) {
+                perror("read");
+                _exit(1);
+            }
+            close(fd_server);
+            if (newProcess.pid != 0) {
+                printf("Received aaaaaaaaaaaaaaaaaaaprocess %d\n", newProcess.id);
+            }
+            // colocar nas estruturas de dados ********************************
+            newProcess.id = id;
+            addProcessToStatus(newProcess, &ArrayData, &ArrayDataSize);
+            printProcessesData(ArrayData, ArrayDataSize);
+            insert_minheap(heap, newProcess);
+            Process min = get_min(heap); 
+            //*****************************************************************
 
-            // TODO: After fixing memory leak, change this to the correct implementation
-            // DinamicProcessData *dinamicProcessesData = (DinamicProcessData *)malloc(sizeof(DinamicProcessData)); // Array to store all the processes in the current session
-            // dinamicProcessesData->size = 1;
-            // dinamicProcessesData->length = 0;
-            // dinamicProcessesData->array = (Process *)malloc(sizeof(Process) * dinamicProcessesData->size);
+            int fd_client = open(CLIENT, O_WRONLY);
+            if (fd_client == -1) {
+                perror("open");
+                _exit(1);
+            }
 
-            int processesDataSize = 0;
-            int idleProcessesQueueSize = 1;
-            Process *processesData = (Process *)malloc(sizeof(Process) * processesDataSize); // Array to store all the processes in the current session
-            Process *processIdleQueue = (Process *)malloc(sizeof(Process) * idleProcessesQueueSize); // Queue to store the processes that are idle
-            // Process *processExecutionQueue = (Process *)malloc(sizeof(Process) * atoi(argv[2])); // Queue to store the processes that are being executed
+            memset(buffer, 0, sizeof(buffer));
+            sprintf(buffer, "TASK %d Received", newProcess.id);
 
-            int idleProcesses = 0;
-            int executingProcesses = 0;
-            // int paralelTasks = atoi(argv[2]);
+            if (write(fd_client, buffer, strlen(buffer)) == -1) {
+                perror("write");
+                _exit(1);
+            }
 
-            // ------------------ PRODUCTION MODE ------------------
+            id++;
+            idleProcesses++;
 
-            while (1) {
-                int fd = open(SERVER, O_RDONLY);
-                if (fd == -1){
-                    perror("Open fifo server");
+            //**************************************************************
+            pid_t pid = fork();
+            if (pid == -1) {
+                perror("Error on fork");
+            } else if (pid == 0) {
+                newProcess.pid = getpid();
+                newProcess.status = PROCESS_STATUS_RUNNING;
+                ArrayData[ArrayDataSize - 1].status = PROCESS_STATUS_RUNNING;
+                executingProcesses++;
+                idleProcesses--;
+
+                // Abre o FIFO do servidor para escrita
+                int fd_server_write = open(SERVER, O_WRONLY);
+                if (fd_server_write == -1) {
+                    perror("open");
                     _exit(1);
                 }
 
-                int fd_client = open(CLIENT, O_WRONLY);
-                if (fd_client == -1){
-                    perror("Open fifo client");
-                    _exit(1);
-                }
+                // Envia a tarefa de volta para o servidor com o PID
+                write(fd_server_write, &newProcess, sizeof(Process));
+                close(fd_server_write);
 
-                memset(buffer, 0, sizeof(buffer));
+                // Executa a tarefa
+                childProccess(newProcess);
+                exit(0);
+            } else {
 
-                while (executingProcesses < atoi(argv[2]) && idleProcesses == 0) {
+                if (newProcess.pid != 0) {
+                
+                    pid_t specific_pid_to_wait = newProcess.pid;
+                    int status;
+                    waitpid(specific_pid_to_wait, &status, 0);
 
-                    // get a new process
-                    if ((bytes_read = read(fd, buffer, sizeof(buffer))) > 0){
-                        buffer[bytes_read] = '\0';
-                        char *time = strtok(buffer, "-");
-                        char *comando = strtok(NULL, "\0");
-                        
-
-                        Process newProcess = createNewProcess(processesRegistered, time, comando);
-                        processesRegistered++;
-                        addProcessToStatus(newProcess, &processesData ,&processesDataSize);
-                    
-                        memset(buffer, 0, sizeof(buffer));
-                        sprintf(buffer, "TASK %d Received", newProcess.pid);
-
-                        if (write(fd_client, buffer, strlen(buffer)) == -1){
-                            perror("write");
-                            _exit(1);
-                        }
-                        memset(buffer, 0, sizeof(buffer));
-                    }
-
-
-                    // If there's space in the queue, add the process to the queue
-                    executingProcesses++;
-
-                    int child_pid = fork();
-                    if (child_pid == -1) perror("Error on creating FCFS child process");
-                    else if (child_pid == 0){                        
-                        processCommandFCFSProduction(&processesData[processesRegistered - 1], processIdleQueue, &idleProcesses, &executingProcesses);
+                    if (WIFEXITED(status)) {
+                        newProcess.status = PROCESS_STATUS_FINISHED;
+                        ArrayData[ArrayDataSize - 1].status = PROCESS_STATUS_FINISHED;
                         executingProcesses--;
-                        processesData[processesRegistered - 1].status = PROCESS_STATUS_FINISHED;
-                        _exit(0);
+                        char resultado[256];
+                        sprintf(resultado, "TASK %d Finished\n", newProcess.id);
+                        write(fdCompleted, resultado, strlen(resultado));
                     }
                 }
-
-                if ((bytes_read = read(fd, buffer, sizeof(buffer))) > 0){
-                    buffer[bytes_read] = '\0';
-                    char *time = strtok(buffer, "-");
-                    char *comando = strtok(NULL, "\0");
-                    
-
-                    Process newProcess = createNewProcess(processesRegistered, time, comando);
-                    processesRegistered++;
-                    addProcessToStatus(newProcess, &processesData ,&processesDataSize);
-                
-                    memset(buffer, 0, sizeof(buffer));
-                    sprintf(buffer, "TASK %d Received", newProcess.pid);
-
-                    if (write(fd_client, buffer, strlen(buffer)) == -1){
-                        perror("write");
-                        _exit(1);
-                    }
-                    memset(buffer, 0, sizeof(buffer));
-
-                    // Add the process to the idle queue
-                    addProcessToIdleQueue(processesData[processesRegistered - 1], &processIdleQueue, &idleProcessesQueueSize, &idleProcesses);
-                }
-
-                printf("All processes: %d\n", idleProcesses);
-                printProcessesData(processesData, processesRegistered);
-
-                memset(buffer, 0, sizeof(buffer));
-                close(fd_client);
-                close(fd);
             }
 
-
-
+            close(fd_client);
         }
+
     }
 
-    close(fdIdle);
-    close(fdExecuting);
     close(fdCompleted);
-
     return 0;
 }

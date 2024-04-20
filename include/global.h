@@ -31,6 +31,7 @@ typedef enum ProcessStatus {
     PROCESS_STATUS_IDLE = 3
 } ProcessStatus;
 
+
 /**
  * @brief Estrutura de um processo
  * @param pid Process ID
@@ -42,12 +43,13 @@ typedef enum ProcessStatus {
 */
 typedef struct process {
     int pid;
-    int parentPid;
     char command[MAX_COMMAND_SIZE];
     ProcessStatus status;
-    struct timeval t1, t2;
     double elapsedTime;
+    struct timeval t1, t2;
     int timePrediction;
+    int id;
+    char pipe[256];
 } Process;
 
 typedef struct dinamicProcessData {
@@ -56,7 +58,13 @@ typedef struct dinamicProcessData {
     int length;
 } DinamicProcessData;
 
-  
+
+typedef struct MinHeap MinHeap;
+struct MinHeap {
+    Process* arr;
+    int size;
+    int capacity;
+};
 
 #include "handleFiles.h"
 #include "lib.h"

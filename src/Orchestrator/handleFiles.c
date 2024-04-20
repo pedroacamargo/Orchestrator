@@ -76,12 +76,6 @@ int handleProcess(Process p) {
     char filename[50];
 
     switch (p.status) {
-        case PROCESS_STATUS_RUNNING:
-            strcpy(filename, "tmp/executing.txt");
-            break;
-        case PROCESS_STATUS_IDLE:
-            strcpy(filename, "tmp/idle.txt");
-            break;
         case PROCESS_STATUS_FINISHED:
             strcpy(filename, "tmp/completed.txt");
             break;
@@ -92,12 +86,6 @@ int handleProcess(Process p) {
     for (int i = PROCESS_STATUS_RUNNING; i <= PROCESS_STATUS_IDLE; ++i) {
         char existing_filename[50];
         switch (i) {
-            case PROCESS_STATUS_RUNNING:
-                strcpy(existing_filename, "tmp/executing.txt");
-                break;
-            case PROCESS_STATUS_IDLE:
-                strcpy(existing_filename, "tmp/idle.txt");
-                break;
             case PROCESS_STATUS_FINISHED:
                 strcpy(existing_filename, "tmp/completed.txt");
                 break;
