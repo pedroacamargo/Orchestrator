@@ -3,7 +3,6 @@
 int checkpolicy(char* policy){
     if (strcmp(policy, "SJF") == 0) return SJF;
     else if (strcmp(policy, "FCFS") == 0) return FCFS;
-
     return INVALID_POLICY;
 }
 
@@ -142,35 +141,22 @@ void extractProcessPipe(const char *command, int number_processes, char **proces
 }
 
 
-void childProccess(Process process) {
-
-    printf("CHILD PROCESS FCFS -> Executing (%d): <%s>\n", process.id, process.command);
-    /*
-    int n = checkPipe(process.command);
-    int res;
-
-    gettimeofday(&process.t1, 0);
-    if (n > 1){
-        printf("PIPE DETECTED\n");
-        execPipe(process.command, n); // no futuro deve retrornar um res 
+void childProccess(Process process,int* executing, MinHeap* heap, int fd_write, Process **ArrayData) {
+    Process min = get_min(heap);
+    delete_minimum(heap);
+    if (fork() == 0){
+        min.pid = getpid();
+        exec(min.command);
+        executing++;
+        min.status = PROCESS_STATUS_RUNNING;
+        (*ArrayData)[min.id - 1].status = PROCESS_STATUS_RUNNING;
+        (*ArrayData)[min.id - 1].pid = min.pid;
+        write(fd_write, &min, sizeof(Process));
+        close(fd_write);
+        exit(0);
     }
-    else {
-        res = exec(process.command);
-        if (res == -1) printf("(%d): Error on exec\n", process.pid);
-    } 
-    gettimeofday(&process.t2, 0);
-
-    process.elapsedTime = (process.t2.tv_sec - process.t1.tv_sec) * 1000.0;      // sec to ms
-    process.elapsedTime += (process.t2.tv_usec - process.t1.tv_usec) / 1000.0;   // us to ms
-
-    process.status = PROCESS_STATUS_FINISHED;
-    handleProcess(process);
-
-    _exit(res); */
-    exec(process.command);
-    printf("CHILD PROCESS FCFS -> Executing (%d): <%s>\n", process.id, process.command);
-    _exit(0);
-}
+    else *executing+=1;
+} 
 
 // ---------------------------- Child Production ----------------------------
 

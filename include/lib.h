@@ -49,8 +49,7 @@ void extractProcessPipe(const char *command, int number_processes, char **proces
  * @brief Execute a command with fork
  * @param command The command to be executed
 */
-void childProccess(Process process);
-
+void childProccess(Process process,int* executing, MinHeap* heap, int fd_write, Process **ArrayData);
 /**
  * @brief Create a new process
  * @param processData The array of processes
@@ -83,7 +82,6 @@ void printProcessesData(Process *processData, int processesRegistered);
  * @param process The process to be printed
 */
 void printProcess(Process process);
-
 /// heaps a entrar em açao
 
 int parent(int i);
