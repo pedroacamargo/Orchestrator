@@ -14,23 +14,20 @@ int checkpolicy(char* policy);
  * -1 if there was an error
  * res if the command was executed successfully
 */
-int exec(const char* command);
-
+int exec(Process process, char* outputFolder, int number_processes);
 /**
  * @brief Execute a command/pipe with fork
  * @param command The command to be executed and @param number_processes 
  * @returns no futuro devera ser igual ao exec
 */
-void execPipe(const char* command, int number_processes);
-
+void execPipe(Process process, int number_processes, char* outputFolder);
 /**
  * @brief Check if the command is a pipe
  * @param command The command to be executed
  * @returns number os pipes in the command, default is 1
  * 
 */
-int checkPipe(const char *command);
-
+int countProcesses(Process process);
 /**
  * @brief take away the space
  * @param command The command to be executed

@@ -86,12 +86,12 @@ int main(int argc, char *argv[]) {
             
             //**************************Child Production**************************
             if (executing < atoi(argv[2]) && policy == SJF && heap->size > 0) {
-                childProccessSJF(newProcess, &executing, heap, fd_write, &ArrayData);
+                childProccessSJF(newProcess, &executing, heap, fd_write, &ArrayData, argv[1]);
                
             }
 
             if (executing < atoi(argv[2]) && policy == FCFS && queue->front != NULL){
-                childProccessFCFS(newProcess, &executing, queue, fd_write, &ArrayData);
+                childProccessFCFS(newProcess, &executing, queue, fd_write, &ArrayData, argv[1]);
             }
             
             //**************************Child Production**************************
@@ -119,11 +119,11 @@ int main(int argc, char *argv[]) {
             // **************************Child Production**************************
 
             if (executing < atoi(argv[2]) && heap->size > 0 && policy == SJF) {
-                childProccessSJF(newProcess, &executing, heap, fd_write, &ArrayData);
+                childProccessSJF(newProcess, &executing, heap, fd_write, &ArrayData, argv[1]);
             }
 
             else if (executing < atoi(argv[2]) && queue->front != NULL && policy == FCFS){
-                childProccessFCFS(newProcess, &executing, queue, fd_write, &ArrayData);
+                childProccessFCFS(newProcess, &executing, queue, fd_write, &ArrayData, argv[1]);
             }
             // **************************Child Production**************************
         }

@@ -6,12 +6,39 @@ int checkpolicy(char* policy){
     return INVALID_POLICY;
 }
 
-int exec(const char* command) {
+int exec(Process process, char* outputFolder, int number_processes) {
 
+    if (number_processes < 2) {
+        char outputFolderWithPath[256];
+        sprintf(outputFolderWithPath, "tmp/%s", outputFolder);
+        mkdir(outputFolderWithPath, 0777);
+
+        char outputFileName[256];
+        sprintf(outputFileName, "tmp/%s/%d.txt", outputFolder, process.id);
+
+        int fd = open(outputFileName, O_WRONLY | O_CREAT, 0644);
+        if (fd == -1) perror("Error opening file");
+
+
+        if (dup2(fd, STDOUT_FILENO) == -1) {
+            perror("Error duplicating file descriptor to stdout");
+            close(fd);
+        
+        }
+
+        if (dup2(fd, STDERR_FILENO) == -1) {
+            perror("Error duplicating file descriptor to stderr");
+            close(fd);
+        
+        }
+
+        close(fd);
+    } 
+    
 	int res = -1, i = 0;
 	char *exec_args[20], *string, *cmd, *tofree;
 
-	tofree = cmd = strdup(command);
+	tofree = cmd = strdup(process.command);
 
 
 	while((string = strsep(&cmd," ")) != NULL){
@@ -51,10 +78,38 @@ int exec(const char* command) {
 	return res;
 }
 
-void execPipe(const char *command, int number_processes) {
+
+void execPipe(Process process, int number_processes, char* outputFolder) {
+
+    char outputFolderWithPath[256];
+    sprintf(outputFolderWithPath, "tmp/%s", outputFolder);
+    mkdir(outputFolderWithPath, 0777);
+
+    char outputFileName[256];
+    sprintf(outputFileName, "tmp/%s/%d.txt", outputFolder, process.id);
+
+    int fd = open(outputFileName, O_WRONLY | O_CREAT, 0644);
+    if (fd == -1) perror("Error opening file");
+
+
+    if (dup2(fd, STDOUT_FILENO) == -1) {
+        perror("Error duplicating file descriptor to stdout");
+        close(fd);
+    
+    }
+
+    if (dup2(fd, STDERR_FILENO) == -1) {
+        perror("Error duplicating file descriptor to stderr");
+        close(fd);
+    
+    }
+
+    close(fd); 
+
     char **processArray = malloc((number_processes) * sizeof(char*));
 
-    extractProcessPipe(command, number_processes, processArray);
+    extractProcessPipe(process.command, number_processes, processArray);
+
 
     // Create pipes
     int pipes[number_processes - 1][2];
@@ -81,7 +136,11 @@ void execPipe(const char *command, int number_processes) {
                 close(pipes[j][1]);
             }
 
-            exec(processArray[i]);
+            Process newProcess;
+            newProcess.pid = process.pid;
+            strcpy(newProcess.command, processArray[i]);
+
+            exec(newProcess, outputFolder, number_processes);
             _exit(EXIT_FAILURE);
         }
     }
@@ -103,10 +162,10 @@ void execPipe(const char *command, int number_processes) {
     }
 }
 
-int checkPipe(const char *command){
+int countProcesses(Process process) {
     int count = 0;
-    for (int i = 0; i < strlen(command); i++){
-        if (command[i] == '|')
+    for (int i = 0; i < strlen(process.command); i++){
+        if (process.command[i] == '|')
             count++;
     }
     return count + 1;
