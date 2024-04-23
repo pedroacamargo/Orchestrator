@@ -59,29 +59,31 @@ int main(int argc, char *argv[]) {
     printf("Orchestrator started!\n");
     while (read(fd, &newProcess, sizeof(Process)) > 0) {
         if (newProcess.status == PROCESS_STATUS_IDLE){
-            newProcess.id = id;
-            addProcessToStatus(newProcess, &ArrayData, &ArrayDataSize);
-            if (policy == SJF) insert_minheap(heap, newProcess);
-            else enqueue(queue, newProcess);
-            id++;
-
+            if (strcmp(newProcess.mode,"execute") == 0 ){
+                newProcess.id = id;
+                addProcessToStatus(newProcess, &ArrayData, &ArrayDataSize);
+                if (policy == SJF) insert_minheap(heap, newProcess);
+                else enqueue(queue, newProcess);
+                id++;
 
             //************************** send msg to client **************************
-            memset(buffer, 0, sizeof(buffer));
-            sprintf(buffer, "TASK %d Received", newProcess.id);
+                memset(buffer, 0, sizeof(buffer));
+                sprintf(buffer, "TASK %d Received\n", newProcess.id);
 
-            int fd_client = open(CLIENT, O_WRONLY);
-            if (fd_client == -1) {
-                perror("open");
-                _exit(1);
-            }
+                int fd_client = open(CLIENT, O_WRONLY);
+                if (fd_client == -1) {
+                    perror("open");
+                    _exit(1);
+                }
 
-            if (write(fd_client, buffer, strlen(buffer)) == -1) {
-                perror("write");
-                _exit(1);   
+                if (write(fd_client, buffer, strlen(buffer)) == -1) {
+                    perror("write");
+                    _exit(1);   
+                }
+                close(fd_client);
+                memset(buffer, 0, sizeof(buffer));
             }
-            close(fd_client);
-            memset(buffer, 0, sizeof(buffer));
+            else if(strcmp(newProcess.mode,"status") == 0) status(&ArrayData,ArrayDataSize);
             //************************** send msg to client **************************
             
             //**************************Child Production**************************
@@ -118,11 +120,11 @@ int main(int argc, char *argv[]) {
 
             // **************************Child Production**************************
 
-            if (executing < atoi(argv[2]) && heap->size > 0 && policy == SJF) {
+            if (policy == SJF && executing < atoi(argv[2]) && heap->size > 0 ) {
                 childProccessSJF(newProcess, &executing, heap, fd_write, &ArrayData, argv[1]);
             }
 
-            else if (executing < atoi(argv[2]) && queue->front != NULL && policy == FCFS){
+            else if (policy == FCFS && executing < atoi(argv[2]) && queue->front != NULL ){
                 childProccessFCFS(newProcess, &executing, queue, fd_write, &ArrayData, argv[1]);
             }
             // **************************Child Production**************************

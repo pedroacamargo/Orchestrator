@@ -8,7 +8,7 @@ int checkpolicy(char* policy){
 
 int exec(Process process, char* outputFolder, int number_processes) {
 
-    if (number_processes < 2) {
+        if (number_processes < 2) {
         char outputFolderWithPath[256];
         sprintf(outputFolderWithPath, "tmp/%s", outputFolder);
         mkdir(outputFolderWithPath, 0777);
@@ -375,4 +375,70 @@ void display(Queue *queue) {
         temp = temp->next;
     }
     printf("\n");
+}
+
+
+void status(Process **ArrayData, int ArrayDataSize) {
+
+    int sizeIdle = 0;
+    int sizeRunning = 0;
+    int sizeCompleted = 0;
+    Process *ArrayIdle = (Process *) malloc(sizeof(Process) * sizeIdle);
+    Process *ArrayRunning = (Process *) malloc(sizeof(Process) * sizeRunning);
+    Process *ArrayTerminated = (Process *) malloc(sizeof(Process) * sizeCompleted);
+         
+
+   for(int i = 0; i < ArrayDataSize; i++){
+        if ((*ArrayData)[i].status == PROCESS_STATUS_IDLE){
+            sizeIdle++;
+            ArrayIdle = realloc(ArrayIdle, sizeof(Process) * sizeIdle);
+            ArrayIdle[sizeIdle- 1] = (*ArrayData)[i];
+        }
+        else if ((*ArrayData)[i].status == PROCESS_STATUS_RUNNING){
+            sizeRunning++;
+            ArrayRunning = realloc(ArrayRunning, sizeof(Process) * sizeRunning);
+            ArrayRunning[sizeRunning - 1] = (*ArrayData)[i];
+        }
+        else if ((*ArrayData)[i].status == PROCESS_STATUS_FINISHED){
+            sizeCompleted++;
+            ArrayTerminated = realloc(ArrayTerminated, sizeof(Process) * sizeCompleted);
+            ArrayTerminated[sizeCompleted - 1] = (*ArrayData)[i];
+        }
+    }
+
+    char buffer[1024];
+    int fd_client = open(CLIENT, O_WRONLY);
+    if (fd_client == -1) {
+        perror("open");
+        _exit(1);
+    }
+
+    //write(fd_client,"Completed\n",strlen("Completed\n"));
+    printf("Completed\n");
+    for (int i = 0; i < sizeCompleted; i++){
+        printf("%d - %s\n", ArrayTerminated[i].id, ArrayTerminated[i].command);
+        //memset(buffer, 0, sizeof(buffer));
+        //snprintf(buffer, sizeof(buffer), "%d - %s\n", ArrayTerminated[i].id, ArrayTerminated[i].command);
+        //write(fd_client, buffer, strlen(buffer));
+    }
+    memset(buffer, 0, sizeof(buffer));
+    //write(fd_client,"Running\n",strlen("Running\n"));
+    printf("Running\n");
+    for (int i = 0; i < sizeRunning; i++){
+        printf("%d - %s\n", ArrayRunning[i].id, ArrayRunning[i].command);
+        //memset(buffer, 0, sizeof(buffer));
+        //snprintf(buffer, sizeof(buffer), "%d - %s\n", ArrayRunning[i].id, ArrayRunning[i].command);
+        //write(fd_client, buffer, strlen(buffer));
+    }
+
+    memset(buffer, 0, sizeof(buffer)); 
+    //write(fd_client,"Idle\n",strlen("Idle\n"));
+    printf("Idle\n");
+    for (int i = 0; i < sizeIdle; i++){
+        printf("%d - %s\n", ArrayIdle[i].id, ArrayIdle[i].command);
+        //memset(buffer, 0, sizeof(buffer));
+        //snprintf(buffer, sizeof(buffer), "%d - %s\n", ArrayIdle[i].id, ArrayIdle[i].command);
+        //write(fd_client, buffer, strlen(buffer));
+    }
+    close(fd_client);
 }

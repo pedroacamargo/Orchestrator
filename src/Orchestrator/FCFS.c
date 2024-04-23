@@ -1,7 +1,7 @@
 #include "global.h"
 
 void childProccessFCFS(Process process,int* executing, Queue* heap, int fd_write, Process **ArrayData, char* output) {
-     Process min = dequeue(heap);
+    Process min = dequeue(heap);
     min.status = PROCESS_STATUS_RUNNING;
     (*ArrayData)[min.id - 1].status = PROCESS_STATUS_RUNNING;
     if (fork() == 0){

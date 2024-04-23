@@ -82,4 +82,6 @@ void initQueue(Queue *q);
 Process dequeue(Queue *queue);
 void display(Queue *queue);
 
+void status(Process **ArrayData, int ArrayDataSize);
+
 #endif

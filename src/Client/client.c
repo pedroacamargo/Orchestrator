@@ -14,11 +14,17 @@ int main(int argc, char *argv[]) {
         .elapsedTime = 0.0f,
         .t1 = {0, 0},
         .t2 = {0, 0},
-        .timePrediction = atoi(argv[2]),
         .id = 0,
     };
-	strcpy(newProcess.command, argv[4]);
-	strcpy(newProcess.pipe, argv[3]);
+	if (strcmp(argv[1],"execute") == 0){
+		newProcess.timePrediction = atoi(argv[2]);
+		strcpy(newProcess.command, argv[4]);
+		strcpy(newProcess.pipe, argv[3]);
+		strcpy(newProcess.mode, argv[1]);
+	}
+	else if (strcmp(argv[1],"status") == 0){
+		strcpy(newProcess.mode, argv[1]);
+	}
 
 	int fd = open(SERVER, O_WRONLY);
 	if (fd == -1) {
@@ -38,17 +44,17 @@ int main(int argc, char *argv[]) {
 		_exit(1);
 	}
 
-    char buffer[256];
-    // Aguardando resposta do servidor
-    if (read(fd_client, buffer, sizeof(buffer)) == -1) {
-        perror("read");
-        _exit(1);
-    }
-    close(fd_client);
-
-    strcat(buffer, "\n");
-    write(STDOUT_FILENO, buffer, strlen(buffer));
+    char buffer[1024];
 	memset(buffer, 0, sizeof(buffer));
+	ssize_t bytesRead = read(fd_client, buffer, sizeof(buffer) - 1);
+	if (bytesRead == -1) {
+    	perror("read");
+    	_exit(1);
+	}
+	buffer[bytesRead] = '\0';  // Adicionar caractere nulo de terminação
+	close(fd_client);
+
+	write(STDOUT_FILENO, buffer, bytesRead);
     unlink(CLIENT);
     return 0;
 }

@@ -50,6 +50,7 @@ typedef struct process {
     int timePrediction;
     int id;
     char pipe[256];
+    char mode[256];
     
 } Process;
 
