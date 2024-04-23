@@ -6,6 +6,7 @@ int checkpolicy(char* policy){
     return INVALID_POLICY;
 }
 
+
 int exec(Process process, char* outputFolder, int number_processes) {
 
         if (number_processes < 2) {
@@ -162,6 +163,7 @@ void execPipe(Process process, int number_processes, char* outputFolder) {
     }
 }
 
+
 int countProcesses(Process process) {
     int count = 0;
     for (int i = 0; i < strlen(process.command); i++){
@@ -200,7 +202,6 @@ void extractProcessPipe(const char *command, int number_processes, char **proces
 }
 
 
-
 void printProcessesData(Process *processData, int processesRegistered) {
     printf("--------------------------\n");
     for (int i = 0; i < processesRegistered; i++) {
@@ -222,23 +223,23 @@ void addProcessToStatus(Process process, Process **processData,int *processesReg
     (*processData)[*processesRegistered - 1] = process;
 } 
 
-/// heaps a entrar em acao 
-
-
 
 int parent(int i) {
     return (i - 1) / 2;
 }
 
+
 int left_child(int i) {
     return (2*i + 1);
 }
+
 
 int right_child(int i) {
     return (2*i + 2);
 }
 
-Process get_min(MinHeap* heap) {
+
+Process getMin(MinHeap* heap) {
     return heap->arr[0];
 }
 
@@ -252,16 +253,16 @@ MinHeap* initHeap(int capacity) {
 } 
 
 
-void resize_heap(MinHeap* heap) {
+void resizeHeap(MinHeap* heap) {
     heap->capacity *= 2;
     heap->arr = (Process*)realloc(heap->arr, heap->capacity * sizeof(Process));
 }
 
 
 
-MinHeap* insert_minheap(MinHeap* heap, Process element) {
+MinHeap* insertHeap(MinHeap* heap, Process element) {
     if (heap->size == heap->capacity) {
-        resize_heap(heap);
+        resizeHeap(heap);
     }
     heap->size++;
     int i = heap->size - 1;
@@ -293,7 +294,7 @@ MinHeap* heapify(MinHeap* heap, int index) {
 }
 
 
-MinHeap* delete_minimum(MinHeap* heap) {
+MinHeap* deleteMin(MinHeap* heap) {
     if (!heap || heap->size == 0)
         return heap;
     heap->arr[0] = heap->arr[heap->size - 1];
@@ -303,7 +304,7 @@ MinHeap* delete_minimum(MinHeap* heap) {
 }
 
 
-void print_heap(MinHeap* heap) {
+void printHeap(MinHeap* heap) {
     printf("Min Heap:\n");
     for (int i = 0; i < heap->size; i++) {
         printf("pid: %d, timePrediction: %d -> ", heap->arr[i].pid, heap->arr[i].timePrediction);
@@ -312,17 +313,12 @@ void print_heap(MinHeap* heap) {
 }
 
 
-
-void free_minheap(MinHeap* heap) {
+void freeHeap(MinHeap* heap) {
     if (!heap)
         return;
     free(heap->arr);
     free(heap);
 }
-
-
-
-// queue a entrar em acao
 
 void initQueue(Queue *q) {
     q->front = NULL;
@@ -362,7 +358,7 @@ Process dequeue(Queue *queue) {
 }
 
 
-void display(Queue *queue) {
+void printQueue(Queue *queue) {
     Queue *temp = queue->front;
 
     if (temp == NULL) {

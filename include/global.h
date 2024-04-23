@@ -67,7 +67,6 @@ typedef struct Queue {
     struct Queue *back;
 } Queue;
 
-#include "handleFiles.h"
 #include "lib.h"
 #include "SJF.h"
 #include "FCFS.h"

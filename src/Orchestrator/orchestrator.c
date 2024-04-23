@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
             if (strcmp(newProcess.mode,"execute") == 0 ){
                 newProcess.id = id;
                 addProcessToStatus(newProcess, &ArrayData, &ArrayDataSize);
-                if (policy == SJF) insert_minheap(heap, newProcess);
+                if (policy == SJF) insertHeap(heap, newProcess);
                 else enqueue(queue, newProcess);
                 id++;
 

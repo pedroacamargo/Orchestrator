@@ -1,8 +1,8 @@
 #include "global.h"
 
 void childProccessSJF(Process process,int* executing, MinHeap* heap, int fd_write, Process **ArrayData, char* output) {
-    Process min = get_min(heap);
-    delete_minimum(heap);
+    Process min = getMin(heap);
+    deleteMin(heap);
     min.status = PROCESS_STATUS_RUNNING;
     (*ArrayData)[min.id - 1].status = PROCESS_STATUS_RUNNING;
     if (fork() == 0){
