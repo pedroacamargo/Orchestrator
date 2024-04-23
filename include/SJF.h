@@ -2,5 +2,6 @@
 #define SJF_H
 #include "global.h"
 
-void processCommandSJF(Process process,int *idleProcesses,MinHeap** heap ,Process** ArrayData);
+void childProccessSJF(Process process,int* executing, MinHeap* heap, int fd_write, Process **ArrayData);
+
 #endif

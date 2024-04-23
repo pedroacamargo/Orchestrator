@@ -46,21 +46,6 @@ char *space(char *str);
 void extractProcessPipe(const char *command, int number_processes, char **processArray);
 
 /**
- * @brief Execute a command with fork
- * @param command The command to be executed
-*/
-void childProccess(Process process,int* executing, MinHeap* heap, int fd_write, Process **ArrayData);
-/**
- * @brief Create a new process
- * @param processData The array of processes
- * @param commandsWritten The number of commands written
- * @param time The time to be predicted
- * @param comando The command to be executed
- * @returns a new process
-*/
-Process createNewProcess(int processesRegistered, char *time, char *comando);
-
-/**
  * @brief Add a process to the status
  * @param process The process to be added
  * @param processData The array of processes
@@ -88,15 +73,16 @@ int parent(int i);
 int left_child(int i);
 int right_child(int i);
 Process get_min(MinHeap* heap);
-MinHeap* init_minheap(int capacity);
+MinHeap* initHeap(int capacity);
 void resize_heap(MinHeap* heap);
 MinHeap* insert_minheap(MinHeap* heap, Process element);
 MinHeap* heapify(MinHeap* heap, int index);
 MinHeap* delete_minimum(MinHeap* heap);
 void print_heap(MinHeap* heap);
 void free_minheap(MinHeap* heap) ;
-
-
-
+void enqueue(Queue *queue, Process process);
+void initQueue(Queue *q);
+Process dequeue(Queue *queue);
+void display(Queue *queue);
 
 #endif

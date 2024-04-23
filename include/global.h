@@ -53,24 +53,22 @@ typedef struct process {
     
 } Process;
 
-typedef struct dinamicProcessData {
-    Process *array;
-    int size;
-    int length;
-} DinamicProcessData;
-
-
-typedef struct MinHeap MinHeap;
-struct MinHeap {
+typedef struct MinHeap {
     Process* arr;
     int size;
     int capacity;
-};
+} MinHeap;
+
+typedef struct Queue {
+    Process process;
+    struct Queue *next;
+    struct Queue *front;
+    struct Queue *back;
+} Queue;
 
 #include "handleFiles.h"
 #include "lib.h"
 #include "SJF.h"
 #include "FCFS.h"
-
 
 #endif

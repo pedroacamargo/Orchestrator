@@ -141,42 +141,6 @@ void extractProcessPipe(const char *command, int number_processes, char **proces
 }
 
 
-void childProccess(Process process,int* executing, MinHeap* heap, int fd_write, Process **ArrayData) {
-    Process min = get_min(heap);
-    delete_minimum(heap);
-    if (fork() == 0){
-        min.pid = getpid();
-        exec(min.command);
-        executing++;
-        min.status = PROCESS_STATUS_RUNNING;
-        (*ArrayData)[min.id - 1].status = PROCESS_STATUS_RUNNING;
-        (*ArrayData)[min.id - 1].pid = min.pid;
-        write(fd_write, &min, sizeof(Process));
-        close(fd_write);
-        exit(0);
-    }
-    else *executing+=1;
-} 
-
-// ---------------------------- Child Production ----------------------------
-
-
-/* Process createNewProcess(int id, char *time, char *comando) {
-
-    Process newProcess = {
-        .pid = id,
-        .status = PROCESS_STATUS_IDLE,
-        .elapsedTime = 0.0f,
-        .timePrediction = atoi(time),
-        .t1 = {0, 0},
-        .t2 = {0, 0},
-        .id = 0
-    };
-    
-    strcpy(newProcess.command, comando);
-    return newProcess;
-} */
-
 
 void printProcessesData(Process *processData, int processesRegistered) {
     printf("--------------------------\n");
@@ -220,13 +184,13 @@ Process get_min(MinHeap* heap) {
 }
 
 
-MinHeap* init_minheap(int capacity) {
+MinHeap* initHeap(int capacity) {
     MinHeap* minheap = (MinHeap*)malloc(sizeof(MinHeap));
     minheap->arr = (Process*)malloc(capacity * sizeof(Process));
     minheap->capacity = capacity;
     minheap->size = 0;
     return minheap;
-}
+} 
 
 
 void resize_heap(MinHeap* heap) {
@@ -295,4 +259,61 @@ void free_minheap(MinHeap* heap) {
         return;
     free(heap->arr);
     free(heap);
+}
+
+
+
+// queue a entrar em acao
+
+void initQueue(Queue *q) {
+    q->front = NULL;
+    q->back = NULL;
+}
+
+
+void enqueue(Queue *queue, Process process) {
+    Queue *new_node = (Queue *)malloc(sizeof(Queue));
+    new_node->process = process;
+    new_node->next = NULL;
+
+    if (queue->back == NULL) {
+        queue->front = new_node;
+    } else {
+        queue->back->next = new_node;
+    }
+    queue->back = new_node;
+}
+
+
+Process dequeue(Queue *queue) {
+    if (queue->front == NULL) {
+        printf("\n Queue is Underflow\n");
+        exit(EXIT_FAILURE);
+    }
+
+    Process data = queue->front->process;
+    Queue *temp = queue->front;
+    queue->front = queue->front->next;
+    free(temp);
+
+    if (queue->front == NULL) {
+        queue->back = NULL;
+    }
+    return data;
+}
+
+
+void display(Queue *queue) {
+    Queue *temp = queue->front;
+
+    if (temp == NULL) {
+        printf("\n Queue is empty\n");
+        return;
+    }
+
+    while (temp != NULL) {
+        printf("%s\n", temp->process.command);
+        temp = temp->next;
+    }
+    printf("\n");
 }

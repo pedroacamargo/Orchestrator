@@ -2,8 +2,7 @@
 #define FCFS_H
 #include "global.h"
 
-void processCommandFCFSDebug(Process process);
+void childProccessFCFS(Process process,int* executing, Queue* heap, int fd_write, Process **ArrayData);
 
-void processCommandFCFSProduction(Process *process, Process *processIdleQueue ,int *idleProcesses, int *executingProcesses);
 
 #endif
