@@ -25,12 +25,11 @@
 
 typedef enum ProcessStatus {
     PROCESS_STATUS_ERROR = -1,
-    PROCESS_STATUS_RUNNING = 0,
-    PROCESS_STATUS_FINISHED = 1,
-    PROCESS_STATUS_WAITING = 2,
-    PROCESS_STATUS_IDLE = 3
+    PROCESS_STATUS_IDLE = 0,
+    PROCESS_STATUS_RUNNING = 1,
+    PROCESS_STATUS_FINISHED = 2,
 } ProcessStatus;
-
+    
 
 /**
  * @brief Estrutura de um processo

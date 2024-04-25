@@ -159,4 +159,6 @@ void printQueue(Queue *queue);
 */
 void status(Process **ArrayData, int ArrayDataSize);
 
+
+void sendProcessArray(int fd, Process *array, int size);
 #endif

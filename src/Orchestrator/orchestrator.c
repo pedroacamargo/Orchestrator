@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
                 else enqueue(queue, newProcess);
                 id++;
 
-            //************************** send msg to client **************************
+             //************************** send msg to client **************************
                 memset(buffer, 0, sizeof(buffer));
                 sprintf(buffer, "TASK %d Received\n", newProcess.id);
 

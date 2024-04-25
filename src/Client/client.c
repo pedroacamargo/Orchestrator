@@ -38,23 +38,61 @@ int main(int argc, char *argv[]) {
 	}
 	close(fd);
 
-    int fd_client = open(CLIENT, O_RDONLY);
-	if (fd_client == -1) {
-		perror("open");
-		_exit(1);
+
+	if (strcmp(argv[1],"execute") == 0){
+		int fd_client = open(CLIENT, O_RDONLY);
+		if (fd_client == -1) {
+			perror("open");
+			_exit(1);
+		}
+
+		char buffer[1024];
+		memset(buffer, 0, sizeof(buffer));
+		ssize_t bytesRead = read(fd_client, buffer, sizeof(buffer) - 1);
+		if (bytesRead == -1) {
+			perror("read");
+			_exit(1);
+		}
+		buffer[bytesRead] = '\0';  
+		close(fd_client);
+
+		write(STDOUT_FILENO, buffer, bytesRead);
+		unlink(CLIENT);
 	}
 
-    char buffer[1024];
-	memset(buffer, 0, sizeof(buffer));
-	ssize_t bytesRead = read(fd_client, buffer, sizeof(buffer) - 1);
-	if (bytesRead == -1) {
-    	perror("read");
-    	_exit(1);
-	}
-	buffer[bytesRead] = '\0';  // Adicionar caractere nulo de terminação
-	close(fd_client);
+	if (strcmp(argv[1],"status") == 0){
+		int fd_client = open(CLIENT, O_RDONLY);
+		if (fd_client == -1) {
+			perror("open");
+			_exit(1);
+		}
 
-	write(STDOUT_FILENO, buffer, bytesRead);
-    unlink(CLIENT);
-    return 0;
+		Process Process;
+		ssize_t bytesRead;
+		char output[1024];
+		int anterior = 7;
+		while ((bytesRead = read(fd_client, &Process, sizeof(Process))) > 0) {
+			if (Process.status != anterior) {
+				anterior = Process.status;
+				if (Process.status == PROCESS_STATUS_RUNNING) {
+					write(STDOUT_FILENO, "Running\n", strlen("Running\n"));
+				} else if (Process.status == PROCESS_STATUS_IDLE) {
+					write(STDOUT_FILENO, "Idle\n", strlen("Idle\n"));
+				} else if (Process.status == PROCESS_STATUS_FINISHED) {
+				write(STDOUT_FILENO, "Completed\n", strlen("Completed\n"));
+				}
+			}
+			int len = snprintf(output, sizeof(output), "ID: %d, Command: %s, Status: %d\n", Process.id, Process.command, Process.status);
+			write(STDOUT_FILENO, output, len);	
+		}
+
+		if (bytesRead == -1) {
+			perror("read");
+			_exit(1);
+		}
+		
+		close(fd_client);
+		unlink(CLIENT);
+	}
+return 0;
 }

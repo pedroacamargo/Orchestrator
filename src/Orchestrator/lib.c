@@ -374,6 +374,15 @@ void printQueue(Queue *queue) {
 }
 
 
+
+
+void sendProcessArray(int fd, Process *array, int size) {
+    for (int i = 0; i < size; i++) {
+        write(fd, &array[i], sizeof(Process)); 
+    }
+}
+
+
 void status(Process **ArrayData, int ArrayDataSize) {
 
     int sizeIdle = 0;
@@ -402,39 +411,16 @@ void status(Process **ArrayData, int ArrayDataSize) {
         }
     }
 
-    char buffer[1024];
-    int fd_client = open(CLIENT, O_WRONLY);
-    if (fd_client == -1) {
-        perror("open");
-        _exit(1);
-    }
+        int fd_client = open(CLIENT, O_WRONLY);
+        if (fd_client == -1) {
+            perror("open");
+            _exit(1);
+        }
 
-    //write(fd_client,"Completed\n",strlen("Completed\n"));
-    printf("Completed\n");
-    for (int i = 0; i < sizeCompleted; i++){
-        printf("%d - %s\n", ArrayTerminated[i].id, ArrayTerminated[i].command);
-        //memset(buffer, 0, sizeof(buffer));
-        //snprintf(buffer, sizeof(buffer), "%d - %s\n", ArrayTerminated[i].id, ArrayTerminated[i].command);
-        //write(fd_client, buffer, strlen(buffer));
-    }
-    memset(buffer, 0, sizeof(buffer));
-    //write(fd_client,"Running\n",strlen("Running\n"));
-    printf("Running\n");
-    for (int i = 0; i < sizeRunning; i++){
-        printf("%d - %s\n", ArrayRunning[i].id, ArrayRunning[i].command);
-        //memset(buffer, 0, sizeof(buffer));
-        //snprintf(buffer, sizeof(buffer), "%d - %s\n", ArrayRunning[i].id, ArrayRunning[i].command);
-        //write(fd_client, buffer, strlen(buffer));
-    }
+    sendProcessArray(fd_client, ArrayIdle, sizeIdle);
+    sendProcessArray(fd_client, ArrayRunning, sizeRunning);
+    sendProcessArray(fd_client, ArrayTerminated, sizeCompleted);
 
-    memset(buffer, 0, sizeof(buffer)); 
-    //write(fd_client,"Idle\n",strlen("Idle\n"));
-    printf("Idle\n");
-    for (int i = 0; i < sizeIdle; i++){
-        printf("%d - %s\n", ArrayIdle[i].id, ArrayIdle[i].command);
-        //memset(buffer, 0, sizeof(buffer));
-        //snprintf(buffer, sizeof(buffer), "%d - %s\n", ArrayIdle[i].id, ArrayIdle[i].command);
-        //write(fd_client, buffer, strlen(buffer));
-    }
     close(fd_client);
+
 }
