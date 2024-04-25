@@ -25,11 +25,11 @@
 
 typedef enum ProcessStatus {
     PROCESS_STATUS_ERROR = -1,
-    PROCESS_STATUS_RUNNING = 0,
-    PROCESS_STATUS_FINISHED = 1,
-    PROCESS_STATUS_WAITING = 2,
-    PROCESS_STATUS_IDLE = 3
+    PROCESS_STATUS_IDLE = 0,
+    PROCESS_STATUS_RUNNING = 1,
+    PROCESS_STATUS_FINISHED = 2,
 } ProcessStatus;
+    
 
 /**
  * @brief Estrutura de um processo
@@ -42,20 +42,32 @@ typedef enum ProcessStatus {
 */
 typedef struct process {
     int pid;
-    int parentPid;
     char command[MAX_COMMAND_SIZE];
     ProcessStatus status;
-    struct timeval t1, t2;
     double elapsedTime;
+    struct timeval t1, t2;
     int timePrediction;
+    int id;
+    char pipe[256];
+    char mode[256];
+    
 } Process;
 
-  
+typedef struct MinHeap {
+    Process* arr;
+    int size;
+    int capacity;
+} MinHeap;
 
-#include "handleFiles.h"
+typedef struct Queue {
+    Process process;
+    struct Queue *next;
+    struct Queue *front;
+    struct Queue *back;
+} Queue;
+
 #include "lib.h"
 #include "SJF.h"
 #include "FCFS.h"
-
 
 #endif

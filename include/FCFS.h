@@ -2,6 +2,6 @@
 #define FCFS_H
 #include "global.h"
 
-void processCommandFCFS(Process process,char* outputFolder);
+void childProccessFCFS(Process process,int* executing, Queue* heap, int fd_write, Process **ArrayData, char* output);
 
 #endif

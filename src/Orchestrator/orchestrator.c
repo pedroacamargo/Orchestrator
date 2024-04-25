@@ -1,125 +1,140 @@
 #include "global.h"
 
-int main(int argc, char *argv[]){
-    
+int main(int argc, char *argv[]) {
 
-    if (argc < 4){
+    if (argc < 4) {
         printf("Usage: %s <output-folder> <parallel-tasks> <sched-policy>\n", argv[0]);
         return 1;
     }
+    //************************** Open file descriptor **************************
+    int fdCompleted = open("tmp/completed.txt", O_CREAT | O_WRONLY, 0666);
+    if (fdCompleted == -1) {
+        perror("Open completed.txt");
+        return 1;
+    } 
 
-    int fd = mkfifo(SERVER, 0666);
-    if (fd == -1){
+    int create = mkfifo(SERVER, 0666);
+    if (create == -1) {
         perror("Open fifo server");
         _exit(1);
     }
 
-    int fdIdle = open("tmp/idle.txt", O_CREAT | O_RDONLY, 0666);
-    if (fdIdle == -1){
-        perror("Open ide.txt");
-        return 1;
+    int fd = open(SERVER, O_RDONLY);
+    if (fd == -1) {
+        perror("Open fifo server");
+        _exit(1);
     }
 
-    int fdExecuting = open("tmp/executing.txt", O_CREAT | O_RDONLY, 0666);
-    if (fdExecuting == -1){
-        perror("Open executing.txt");
-        return 1;
+    int fd_write = open(SERVER, O_WRONLY);
+    if (fd_write == -1) {
+        perror("Open fifo server");
+        _exit(1);
     }
-
-    int fdCompleted = open("tmp/completed.txt", O_CREAT | O_RDONLY, 0666);
-    if (fdCompleted == -1){
-        perror("Open completed.txt");
-        return 1;
-    }
-
-
-
-    if (checkpolicy(argv[3]) == INVALID_POLICY){
+    int policy = checkpolicy(argv[3]);
+    if (policy == INVALID_POLICY) {
         printf("Invalid policy, server suspended!\n");
         return 1;
     }
+    //************************** Open file descriptor **************************
+
+
+    //************************** Initialization *******************************
+
+    char buffer[256];
+    int id = 1;
+    int executing = 0;
+    Process newProcess;
+    int ArrayDataSize = 0;
+
     
-    else{
+    Process *ArrayData = (Process *) malloc(sizeof(Process) * ArrayDataSize);
+    MinHeap *heap;
+    Queue *queue = (Queue *)malloc(sizeof(Queue));
+    if (policy == SJF) heap = initHeap(10);
+    else initQueue(queue);
+    
 
-        printf("Orchestrator started!\n");
+    //************************** Initialization ******************************
 
-        char buffer[256];
-        ssize_t bytes_read;
-        int commandsWritten = 1;
+    printf("Orchestrator started!\n");
+    while (read(fd, &newProcess, sizeof(Process)) > 0) {
+        if (newProcess.status == PROCESS_STATUS_IDLE){
+            if (strcmp(newProcess.mode,"execute") == 0 ){
+                newProcess.id = id;
+                addProcessToStatus(newProcess, &ArrayData, &ArrayDataSize);
+                if (policy == SJF) insertHeap(heap, newProcess);
+                else enqueue(queue, newProcess);
+                id++;
 
-        while (1){
-
-            int fd = open(SERVER, O_RDONLY);
-            if (fd == -1){
-                perror("Open fifo server");
-                _exit(1);
-            }
-
-            int fd_client = open(CLIENT, O_WRONLY);
-            if (fd_client == -1){
-                perror("Open fifo client");
-                _exit(1);
-            }
-
-            Process newProcess;
-            memset(&newProcess, 0, sizeof(Process));
-            printf("Waiting for new process...\n");
-
-            if ((bytes_read = read(fd, buffer, sizeof(buffer))) > 0){
-
-                buffer[bytes_read] = '\0';
-                char *first_string = strtok(buffer, "-");
-                char *second_string = strtok(NULL, "\0");
-                printf("---> New process received\n");
-                printf("--> Time predicted: %s miliseconds\n", first_string);
-                printf("-> Command to be executed: %s\n", second_string);
-
-                newProcess.pid = commandsWritten;
-                strcpy(newProcess.command, second_string);
-                newProcess.timePrediction = atoi(first_string);
+             //************************** send msg to client **************************
                 memset(buffer, 0, sizeof(buffer));
+                sprintf(buffer, "TASK %d Received\n", newProcess.id);
 
-                sprintf(buffer, "TASK %d Received", newProcess.pid);
-
-                if (write(fd_client, buffer, strlen(buffer)) == -1){
-                    perror("write");
+                int fd_client = open(CLIENT, O_WRONLY);
+                if (fd_client == -1) {
+                    perror("open");
                     _exit(1);
                 }
+
+                if (write(fd_client, buffer, strlen(buffer)) == -1) {
+                    perror("write");
+                    _exit(1);   
+                }
+                close(fd_client);
                 memset(buffer, 0, sizeof(buffer));
             }
-
-            if (countLines("tmp/executing.txt") < atoi(argv[2]) && countLines("tmp/idle.txt") == 0){
-
-                int child_pid = fork();
-
-                if (child_pid == -1){
-                    perror("Error on creating FCFS child process");
-                    }
-
-                if (child_pid == 0){
-                    if (checkpolicy(argv[3]) == SJF) processCommandSJF(newProcess, argv[1]);
-                    else if( checkpolicy(argv[3]) == FCFS) processCommandFCFS(newProcess, argv[1]);
-                    _exit(0);
-                }
-
-                commandsWritten++;
+            else if(strcmp(newProcess.mode,"status") == 0) status(&ArrayData,ArrayDataSize);
+            //************************** send msg to client **************************
             
-            }
-            else {
-                newProcess.status = PROCESS_STATUS_IDLE;
-                handleProcess(newProcess);
-                commandsWritten++;
+            //**************************Child Production**************************
+            if (executing < atoi(argv[2]) && policy == SJF && heap->size > 0) {
+                childProccessSJF(newProcess, &executing, heap, fd_write, &ArrayData, argv[1]);
+               
             }
 
-            memset(buffer, 0, sizeof(buffer));
-            close(fd_client);
-            close(fd);
+            if (executing < atoi(argv[2]) && policy == FCFS && queue->front != NULL){
+                childProccessFCFS(newProcess, &executing, queue, fd_write, &ArrayData, argv[1]);
+            }
+            
+            //**************************Child Production**************************
+        }
+
+
+            // ********************* wait for pr    ocess to finish *********************
+
+        else if(newProcess.status == PROCESS_STATUS_RUNNING){
+            int status;
+            waitpid(newProcess.pid, &status, 0);
+            newProcess.status = PROCESS_STATUS_FINISHED;
+            printf("Process %d finished\n", newProcess.id);
+            ArrayData[newProcess.id - 1].status = PROCESS_STATUS_FINISHED;
+            ArrayData[newProcess.id - 1].pid = newProcess.pid;
+            snprintf(buffer, sizeof(buffer), "TASK %d Finished\n", newProcess.id);
+            printProcessesData(ArrayData, ArrayDataSize);
+            write(fdCompleted, buffer, strlen(buffer));            
+            executing--;
+
+            // ********************* wait for process to finish *********************
+
+
+
+            // **************************Child Production**************************
+
+            if (policy == SJF && executing < atoi(argv[2]) && heap->size > 0 ) {
+                childProccessSJF(newProcess, &executing, heap, fd_write, &ArrayData, argv[1]);
+            }
+
+            else if (policy == FCFS && executing < atoi(argv[2]) && queue->front != NULL ){
+                childProccessFCFS(newProcess, &executing, queue, fd_write, &ArrayData, argv[1]);
+            }
+            // **************************Child Production**************************
         }
     }
 
-    close(fdIdle);
-    close(fdExecuting);
+    close(fd);
+    close(fd_write);
+    unlink(SERVER);
     close(fdCompleted);
-
     return 0;
+
 }

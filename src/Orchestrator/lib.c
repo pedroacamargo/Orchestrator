@@ -3,19 +3,19 @@
 int checkpolicy(char* policy){
     if (strcmp(policy, "SJF") == 0) return SJF;
     else if (strcmp(policy, "FCFS") == 0) return FCFS;
-
     return INVALID_POLICY;
 }
 
+
 int exec(Process process, char* outputFolder, int number_processes) {
 
-    if (number_processes < 2) {
+        if (number_processes < 2) {
         char outputFolderWithPath[256];
         sprintf(outputFolderWithPath, "tmp/%s", outputFolder);
         mkdir(outputFolderWithPath, 0777);
 
         char outputFileName[256];
-        sprintf(outputFileName, "tmp/%s/%d.txt", outputFolder, process.pid);
+        sprintf(outputFileName, "tmp/%s/%d.txt", outputFolder, process.id);
 
         int fd = open(outputFileName, O_WRONLY | O_CREAT, 0644);
         if (fd == -1) perror("Error opening file");
@@ -35,7 +35,7 @@ int exec(Process process, char* outputFolder, int number_processes) {
 
         close(fd);
     } 
-   
+    
 	int res = -1, i = 0;
 	char *exec_args[20], *string, *cmd, *tofree;
 
@@ -79,6 +79,7 @@ int exec(Process process, char* outputFolder, int number_processes) {
 	return res;
 }
 
+
 void execPipe(Process process, int number_processes, char* outputFolder) {
 
     char outputFolderWithPath[256];
@@ -86,7 +87,7 @@ void execPipe(Process process, int number_processes, char* outputFolder) {
     mkdir(outputFolderWithPath, 0777);
 
     char outputFileName[256];
-    sprintf(outputFileName, "tmp/%s/%d.txt", outputFolder, process.pid);
+    sprintf(outputFileName, "tmp/%s/%d.txt", outputFolder, process.id);
 
     int fd = open(outputFileName, O_WRONLY | O_CREAT, 0644);
     if (fd == -1) perror("Error opening file");
@@ -104,7 +105,7 @@ void execPipe(Process process, int number_processes, char* outputFolder) {
     
     }
 
-    close(fd);
+    close(fd); 
 
     char **processArray = malloc((number_processes) * sizeof(char*));
 
@@ -162,10 +163,11 @@ void execPipe(Process process, int number_processes, char* outputFolder) {
     }
 } 
 
-int checkPipe(const char *command){
+
+int countProcesses(Process process) {
     int count = 0;
-    for (int i = 0; i < strlen(command); i++){
-        if (command[i] == '|')
+    for (int i = 0; i < strlen(process.command); i++){
+        if (process.command[i] == '|')
             count++;
     }
     return count + 1;
@@ -200,31 +202,225 @@ void extractProcessPipe(const char *command, int number_processes, char **proces
 }
 
 
-void childProccess(Process process, char* outputFolder) {
-    printf("CHILD PROCESS FCFS -> Executing (%d): <%s>\n", process.pid, process.command);
-    process.status = PROCESS_STATUS_RUNNING;
-    handleProcess(process);
-
-    int n = checkPipe(process.command);
-    int res;
-
-    gettimeofday(&process.t1, 0);
-    if (n > 1){
-        printf("PIPE DETECTED\n");
-        execPipe(process, n, outputFolder); // no futuro deve retrornar um res 
+void printProcessesData(Process *processData, int processesRegistered) {
+    printf("--------------------------\n");
+    for (int i = 0; i < processesRegistered; i++) {
+        printProcess(processData[i]);
     }
-    else {
-        res = exec(process, outputFolder,n);
-        if (res == -1) printf("(%d): Error on exec\n", process.pid);
-    } 
-    gettimeofday(&process.t2, 0);
-
-    process.elapsedTime = (process.t2.tv_sec - process.t1.tv_sec) * 1000.0;      // sec to ms
-    process.elapsedTime += (process.t2.tv_usec - process.t1.tv_usec) / 1000.0;   // us to ms
-
-    process.status = PROCESS_STATUS_FINISHED;
-    handleProcess(process);
-
-    _exit(res);
+    printf("--------------------------\n");
 }
 
+
+void printProcess(Process process) {
+    printf("ID: %d | Status: %d | Command: %s | PID: %d\n", process.id, process.status, process.command, process.pid);
+}
+
+
+void addProcessToStatus(Process process, Process **processData,int *processesRegistered) {
+    *processesRegistered += 1;
+
+    *processData = realloc(*processData, *processesRegistered * sizeof(Process));
+    (*processData)[*processesRegistered - 1] = process;
+} 
+
+
+int parent(int i) {
+    return (i - 1) / 2;
+}
+
+
+int left_child(int i) {
+    return (2*i + 1);
+}
+
+
+int right_child(int i) {
+    return (2*i + 2);
+}
+
+
+Process getMin(MinHeap* heap) {
+    return heap->arr[0];
+}
+
+
+MinHeap* initHeap(int capacity) {
+    MinHeap* minheap = (MinHeap*)malloc(sizeof(MinHeap));
+    minheap->arr = (Process*)malloc(capacity * sizeof(Process));
+    minheap->capacity = capacity;
+    minheap->size = 0;
+    return minheap;
+} 
+
+
+void resizeHeap(MinHeap* heap) {
+    heap->capacity *= 2;
+    heap->arr = (Process*)realloc(heap->arr, heap->capacity * sizeof(Process));
+}
+
+
+
+MinHeap* insertHeap(MinHeap* heap, Process element) {
+    if (heap->size == heap->capacity) {
+        resizeHeap(heap);
+    }
+    heap->size++;
+    int i = heap->size - 1;
+    while (i && element.timePrediction < heap->arr[parent(i)].timePrediction) {
+        heap->arr[i] = heap->arr[parent(i)];
+        i = parent(i);
+    }
+    heap->arr[i] = element;
+    return heap;
+}
+
+
+MinHeap* heapify(MinHeap* heap, int index) {
+    int smallest = index;
+    int left = left_child(index);
+    int right = right_child(index);
+    
+    if (left < heap->size && heap->arr[left].timePrediction < heap->arr[index].timePrediction)
+        smallest = left;
+    if (right < heap->size && heap->arr[right].timePrediction < heap->arr[smallest].timePrediction)
+        smallest = right;
+    if (smallest != index) {
+        Process temp = heap->arr[index];
+        heap->arr[index] = heap->arr[smallest];
+        heap->arr[smallest] = temp;
+        heap = heapify(heap, smallest);
+    }
+    return heap;
+}
+
+
+MinHeap* deleteMin(MinHeap* heap) {
+    if (!heap || heap->size == 0)
+        return heap;
+    heap->arr[0] = heap->arr[heap->size - 1];
+    heap->size--;
+    heap = heapify(heap, 0);
+    return heap;
+}
+
+
+void printHeap(MinHeap* heap) {
+    printf("Min Heap:\n");
+    for (int i = 0; i < heap->size; i++) {
+        printf("pid: %d, timePrediction: %d -> ", heap->arr[i].pid, heap->arr[i].timePrediction);
+    }
+    printf("\n");
+}
+
+
+void freeHeap(MinHeap* heap) {
+    if (!heap)
+        return;
+    free(heap->arr);
+    free(heap);
+}
+
+void initQueue(Queue *q) {
+    q->front = NULL;
+    q->back = NULL;
+}
+
+
+void enqueue(Queue *queue, Process process) {
+    Queue *new_node = (Queue *)malloc(sizeof(Queue));
+    new_node->process = process;
+    new_node->next = NULL;
+
+    if (queue->back == NULL) {
+        queue->front = new_node;
+    } else {
+        queue->back->next = new_node;
+    }
+    queue->back = new_node;
+}
+
+
+Process dequeue(Queue *queue) {
+    if (queue->front == NULL) {
+        printf("\n Queue is Underflow\n");
+        exit(EXIT_FAILURE);
+    }
+
+    Process data = queue->front->process;
+    Queue *temp = queue->front;
+    queue->front = queue->front->next;
+    free(temp);
+
+    if (queue->front == NULL) {
+        queue->back = NULL;
+    }
+    return data;
+}
+
+
+void printQueue(Queue *queue) {
+    Queue *temp = queue->front;
+
+    if (temp == NULL) {
+        printf("\n Queue is empty\n");
+        return;
+    }
+
+    while (temp != NULL) {
+        printf("%s\n", temp->process.command);
+        temp = temp->next;
+    }
+    printf("\n");
+}
+
+
+
+
+void sendProcessArray(int fd, Process *array, int size) {
+    for (int i = 0; i < size; i++) {
+        write(fd, &array[i], sizeof(Process)); 
+    }
+}
+
+
+void status(Process **ArrayData, int ArrayDataSize) {
+
+    int sizeIdle = 0;
+    int sizeRunning = 0;
+    int sizeCompleted = 0;
+    Process *ArrayIdle = (Process *) malloc(sizeof(Process) * sizeIdle);
+    Process *ArrayRunning = (Process *) malloc(sizeof(Process) * sizeRunning);
+    Process *ArrayTerminated = (Process *) malloc(sizeof(Process) * sizeCompleted);
+         
+
+   for(int i = 0; i < ArrayDataSize; i++){
+        if ((*ArrayData)[i].status == PROCESS_STATUS_IDLE){
+            sizeIdle++;
+            ArrayIdle = realloc(ArrayIdle, sizeof(Process) * sizeIdle);
+            ArrayIdle[sizeIdle- 1] = (*ArrayData)[i];
+        }
+        else if ((*ArrayData)[i].status == PROCESS_STATUS_RUNNING){
+            sizeRunning++;
+            ArrayRunning = realloc(ArrayRunning, sizeof(Process) * sizeRunning);
+            ArrayRunning[sizeRunning - 1] = (*ArrayData)[i];
+        }
+        else if ((*ArrayData)[i].status == PROCESS_STATUS_FINISHED){
+            sizeCompleted++;
+            ArrayTerminated = realloc(ArrayTerminated, sizeof(Process) * sizeCompleted);
+            ArrayTerminated[sizeCompleted - 1] = (*ArrayData)[i];
+        }
+    }
+
+        int fd_client = open(CLIENT, O_WRONLY);
+        if (fd_client == -1) {
+            perror("open");
+            _exit(1);
+        }
+
+    sendProcessArray(fd_client, ArrayIdle, sizeIdle);
+    sendProcessArray(fd_client, ArrayRunning, sizeRunning);
+    sendProcessArray(fd_client, ArrayTerminated, sizeCompleted);
+
+    close(fd_client);
+
+}
