@@ -65,7 +65,9 @@ int main(int argc, char *argv[]) {
                 if (policy == SJF) insertHeap(heap, newProcess);
                 else enqueue(queue, newProcess);
                 id++;
-                gettimeofday(&newProcess.t1,0);
+                gettimeofday(&ArrayData[newProcess.id - 1].t1,NULL);
+                printf("t1 sec: %ld\n", ArrayData[newProcess.id - 1].t1.tv_sec);
+                
              //************************** send msg to client **************************
                 memset(buffer, 0, sizeof(buffer));
                 sprintf(buffer, "TASK %d Received\n", newProcess.id);
@@ -110,9 +112,13 @@ int main(int argc, char *argv[]) {
             ArrayData[newProcess.id - 1].status = PROCESS_STATUS_FINISHED;
             ArrayData[newProcess.id - 1].pid = newProcess.pid;
 
-            gettimeofday(&newProcess.t2, 0);
-            newProcess.elapsedTime= (newProcess.t2.tv_sec - newProcess.t1.tv_sec) * 1000.0;
-            newProcess.elapsedTime += (newProcess.t2.tv_usec - newProcess.t1.tv_usec) / 1000.0;
+            gettimeofday(&newProcess.t2,NULL);
+            // printf("t1 sec: %ld\n", ArrayData[newProcess.id - 1].t1.tv_sec);
+            // printf("t2 sec: %ld\n", newProcess.t2.tv_sec);
+            
+
+            newProcess.elapsedTime = (newProcess.t2.tv_sec - ArrayData[newProcess.id - 1].t1.tv_sec) * 1000.0;
+            newProcess.elapsedTime += (newProcess.t2.tv_usec - ArrayData[newProcess.id - 1].t1.tv_usec) / 1000.0;
             printf("Process %d elapsed time: %f\n", newProcess.id, newProcess.elapsedTime);
 
 
