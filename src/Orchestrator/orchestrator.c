@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
                 if (policy == SJF) insertHeap(heap, newProcess);
                 else enqueue(queue, newProcess);
                 id++;
-
+                gettimeofday(&newProcess.t1,0);
              //************************** send msg to client **************************
                 memset(buffer, 0, sizeof(buffer));
                 sprintf(buffer, "TASK %d Received\n", newProcess.id);
@@ -109,13 +109,19 @@ int main(int argc, char *argv[]) {
             printf("Process %d finished\n", newProcess.id);
             ArrayData[newProcess.id - 1].status = PROCESS_STATUS_FINISHED;
             ArrayData[newProcess.id - 1].pid = newProcess.pid;
-            snprintf(buffer, sizeof(buffer), "TASK %d Finished\n", newProcess.id);
+
+            gettimeofday(&newProcess.t2, 0);
+            newProcess.elapsedTime= (newProcess.t2.tv_sec - newProcess.t1.tv_sec) * 1000.0;
+            newProcess.elapsedTime += (newProcess.t2.tv_usec - newProcess.t1.tv_usec) / 1000.0;
+            printf("Process %d elapsed time: %f\n", newProcess.id, newProcess.elapsedTime);
+
+
+            snprintf(buffer, sizeof(buffer), "TASK %d Finished - Time: %f \n", newProcess.id, newProcess.elapsedTime);
             printProcessesData(ArrayData, ArrayDataSize);
             write(fdCompleted, buffer, strlen(buffer));            
             executing--;
 
             // ********************* wait for process to finish *********************
-
 
 
             // **************************Child Production**************************
