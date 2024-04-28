@@ -127,13 +127,12 @@ void freeHeap(MinHeap* heap) ;
 
 /**
     * @brief Initialize the queue
-    * @param q 
+    * @returns The queue
 */
-void initQueue(Queue *q);
-
+Queue* initQueue();
 /**
     * @brief Enqueue a process in the queue
-    * @param q 
+    * @param queue 
     * @param process The process to be enqueued
 */
 void enqueue(Queue *queue, Process process);
@@ -141,14 +140,14 @@ void enqueue(Queue *queue, Process process);
 
 /**
     * @brief Dequeue a process from the queue
-    * @param q 
+    * @param queue 
     * @returns The process dequeued
 */
 Process dequeue(Queue *queue);
 
 /**
     * @brief Print the queue
-    * @param q 
+    * @param queue 
 */
 void printQueue(Queue *queue);
 
@@ -159,6 +158,11 @@ void printQueue(Queue *queue);
 */
 void status(Process **ArrayData, int ArrayDataSize);
 
-
+/**
+    * @brief Send the process array
+    * @param fd The file descriptor
+    * @param array The array of processes
+    * @param size The size of the array
+*/
 void sendProcessArray(int fd, Process *array, int size);
 #endif

@@ -59,11 +59,14 @@ typedef struct MinHeap {
     int capacity;
 } MinHeap;
 
+typedef struct QueueNode {
+    Process data;
+    struct QueueNode *next;
+} QueueNode;
+
 typedef struct Queue {
-    Process process;
-    struct Queue *next;
-    struct Queue *front;
-    struct Queue *back;
+    QueueNode *front;
+    QueueNode *back;
 } Queue;
 
 #include "lib.h"
