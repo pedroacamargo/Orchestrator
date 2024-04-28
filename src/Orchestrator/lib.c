@@ -417,9 +417,9 @@ void status(Process **ArrayData, int ArrayDataSize) {
             _exit(1);
         }
 
-    sendProcessArray(fd_client, ArrayIdle, sizeIdle);
-    sendProcessArray(fd_client, ArrayRunning, sizeRunning);
     sendProcessArray(fd_client, ArrayTerminated, sizeCompleted);
+    sendProcessArray(fd_client, ArrayRunning, sizeRunning);
+    sendProcessArray(fd_client, ArrayIdle, sizeIdle);
 
     close(fd_client);
 
