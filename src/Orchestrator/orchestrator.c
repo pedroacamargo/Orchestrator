@@ -66,7 +66,6 @@ int main(int argc, char *argv[]) {
                 else enqueue(queue, newProcess);
                 id++;
                 gettimeofday(&ArrayData[newProcess.id - 1].t1,NULL);
-                printf("t1 sec: %ld\n", ArrayData[newProcess.id - 1].t1.tv_sec);
                 
              //************************** send msg to client **************************
                 memset(buffer, 0, sizeof(buffer));
