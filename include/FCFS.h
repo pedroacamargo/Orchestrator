@@ -2,6 +2,6 @@
 #define FCFS_H
 #include "global.h"
 
-void childProccessFCFS(Process process,int* executing, Queue* heap, int fd_write, Process **ArrayData, char* output);
+void childProccessFCFS(Process process,int* executing, Queue* queue, int fd_write, Process **ArrayData, char* output);
 
 #endif

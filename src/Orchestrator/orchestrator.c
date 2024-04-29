@@ -49,11 +49,9 @@ int main(int argc, char *argv[]) {
     
     Process *ArrayData = (Process *) malloc(sizeof(Process) * ArrayDataSize);
     MinHeap *heap;
-    Queue *queue = (Queue *)malloc(sizeof(Queue));
+    Queue *queue;
     if (policy == SJF) heap = initHeap(10);
-    else initQueue(queue);
-    
-
+    else queue = initQueue();
     //************************** Initialization ******************************
 
     printf("Orchestrator started!\n");

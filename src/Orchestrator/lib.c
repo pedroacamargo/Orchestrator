@@ -320,15 +320,16 @@ void freeHeap(MinHeap* heap) {
     free(heap);
 }
 
-void initQueue(Queue *q) {
-    q->front = NULL;
-    q->back = NULL;
+Queue* initQueue() {
+    Queue *queue = (Queue *)malloc(sizeof(Queue));
+    queue->front = NULL;
+    queue->back = NULL;
+    return queue;
 }
 
-
 void enqueue(Queue *queue, Process process) {
-    Queue *new_node = (Queue *)malloc(sizeof(Queue));
-    new_node->process = process;
+    QueueNode *new_node = (QueueNode *)malloc(sizeof(QueueNode));
+    new_node->data = process;
     new_node->next = NULL;
 
     if (queue->back == NULL) {
@@ -339,27 +340,26 @@ void enqueue(Queue *queue, Process process) {
     queue->back = new_node;
 }
 
-
 Process dequeue(Queue *queue) {
     if (queue->front == NULL) {
         printf("\n Queue is Underflow\n");
         exit(EXIT_FAILURE);
     }
 
-    Process data = queue->front->process;
-    Queue *temp = queue->front;
+    QueueNode *temp = queue->front;
+    Process data = temp->data;
     queue->front = queue->front->next;
     free(temp);
 
     if (queue->front == NULL) {
         queue->back = NULL;
     }
+
     return data;
 }
 
-
 void printQueue(Queue *queue) {
-    Queue *temp = queue->front;
+    QueueNode *temp = queue->front;
 
     if (temp == NULL) {
         printf("\n Queue is empty\n");
@@ -367,14 +367,11 @@ void printQueue(Queue *queue) {
     }
 
     while (temp != NULL) {
-        printf("%s\n", temp->process.command);
+        printf("%s\n", temp->data.command);
         temp = temp->next;
     }
     printf("\n");
 }
-
-
-
 
 void sendProcessArray(int fd, Process *array, int size) {
     for (int i = 0; i < size; i++) {
