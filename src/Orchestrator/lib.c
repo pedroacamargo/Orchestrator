@@ -57,7 +57,7 @@ int exec(Process process, char* outputFolder, int number_processes) {
 		}
 		case 0: {
 			execvp(exec_args[0], exec_args);
-			_exit(-1); // So executa isso quando dá erro
+			_exit(-1); // So executa isso quando dá erro 
 			break;
 		}
 		default: {
@@ -131,7 +131,7 @@ void execPipe(Process process, int number_processes, char* outputFolder) {
                 dup2(pipes[i][1], 1);
             }
 
-            // Close all pipe fds
+            // Close all pipe 
             for (int j = 0; j < number_processes - 1; j++) {
                 close(pipes[j][0]);
                 close(pipes[j][1]);
@@ -146,7 +146,7 @@ void execPipe(Process process, int number_processes, char* outputFolder) {
         }
     }
 
-    // Close all pipe fds
+    // Close all pipe 
     for (int i = 0; i < number_processes - 1; i++) {
         close(pipes[i][0]);
         close(pipes[i][1]);
