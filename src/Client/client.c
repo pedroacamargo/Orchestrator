@@ -82,7 +82,14 @@ int main(int argc, char *argv[]) {
 				write(STDOUT_FILENO, "Completed\n", strlen("Completed\n"));
 				}
 			}
-			int len = snprintf(output, sizeof(output), "ID: %d, Command: %s, Status: %d\n", Process.id, Process.command, Process.status);
+			int len;
+			if (Process.elapsedTime != 0.0f) {
+				len = snprintf(output, sizeof(output), "ID: %d, Command: %s, Time: %f ms\n", Process.id, Process.command, Process.elapsedTime);
+			}
+			else {
+				len = snprintf(output, sizeof(output), "ID: %d, Command: %s\n", Process.id, Process.command);
+			}
+
 			write(STDOUT_FILENO, output, len);	
 		}
 

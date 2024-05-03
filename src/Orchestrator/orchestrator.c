@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
     else queue = initQueue();
     //************************** Initialization ******************************
 
-    printf("Orchestrator started!\n");
+    //printf("Orchestrator started!\n");
     while (read(fd, &newProcess, sizeof(Process)) > 0) {
         if (newProcess.status == PROCESS_STATUS_IDLE){
             if (strcmp(newProcess.mode,"execute") == 0 ){
@@ -105,22 +105,18 @@ int main(int argc, char *argv[]) {
             int status;
             waitpid(newProcess.pid, &status, 0);
             newProcess.status = PROCESS_STATUS_FINISHED;
-            printf("Process %d finished\n", newProcess.id);
+            //printf("Process %d finished\n", newProcess.id);
             ArrayData[newProcess.id - 1].status = PROCESS_STATUS_FINISHED;
             ArrayData[newProcess.id - 1].pid = newProcess.pid;
 
             gettimeofday(&newProcess.t2,NULL);
-            // printf("t1 sec: %ld\n", ArrayData[newProcess.id - 1].t1.tv_sec);
-            // printf("t2 sec: %ld\n", newProcess.t2.tv_sec);
-            
 
             newProcess.elapsedTime = (newProcess.t2.tv_sec - ArrayData[newProcess.id - 1].t1.tv_sec) * 1000.0;
             newProcess.elapsedTime += (newProcess.t2.tv_usec - ArrayData[newProcess.id - 1].t1.tv_usec) / 1000.0;
-            printf("Process %d elapsed time: %f\n", newProcess.id, newProcess.elapsedTime);
+            ArrayData[newProcess.id - 1].elapsedTime = newProcess.elapsedTime;
+            snprintf(buffer, sizeof(buffer), "TASK %d Finished - Time: %f ms\n", newProcess.id, newProcess.elapsedTime);
+            //printProcessesData(ArrayData, ArrayDataSize);
 
-
-            snprintf(buffer, sizeof(buffer), "TASK %d Finished - Time: %f \n", newProcess.id, newProcess.elapsedTime);
-            printProcessesData(ArrayData, ArrayDataSize);
             write(fdCompleted, buffer, strlen(buffer));            
             executing--;
 
